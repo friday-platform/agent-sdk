@@ -1,0 +1,11 @@
+{
+  "name": "@friday/conformance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Conformance tests validating compiled WASM agents against the friday:agent contract",
+  "type": "module",
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "vite-plus": "catalog:"
+  }
+}

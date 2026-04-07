@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentMetadata",
+  "description": "Metadata returned by a friday:agent getMetadata() export",
+  "type": "object",
+  "required": ["id", "version", "description", "expertise"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Agent ID (lowercase kebab-case)"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Agent display name"
+    },
+    "version": {
+      "type": "string",
+      "description": "Agent version"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What this agent does"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short human-readable one-liner for UI display"
+    },
+    "constraints": {
+      "type": "string",
+      "description": "Human-readable limitations or restrictions on agent capabilities"
+    },
+    "expertise": {
+      "type": "object",
+      "required": ["examples"],
+      "properties": {
+        "examples": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Example prompts for users"
+        }
+      },
+      "additionalProperties": false
+    },
+    "inputSchema": {
+      "description": "Optional input schema for structured input"
+    },
+    "outputSchema": {
+      "description": "Optional output schema for structured output"
+    },
+    "mcp": {
+      "type": "object",
+      "description": "MCP server configuration",
+      "additionalProperties": true
+    },
+    "environment": {
+      "type": "object",
+      "description": "Environment variables needed by the agent",
+      "additionalProperties": true
+    },
+    "llm": {
+      "type": "object",
+      "description": "LLM configuration",
+      "additionalProperties": true
+    },
+    "useWorkspaceSkills": {
+      "type": "boolean",
+      "description": "Whether this agent uses workspace skills"
+    }
+  },
+  "additionalProperties": false
+}
