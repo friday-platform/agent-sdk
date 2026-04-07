@@ -1,0 +1,10 @@
+{
+  "name": "@friday/wit",
+  "version": "0.1.0",
+  "description": "WIT contract defining the friday:agent@0.1.0 interface for WASM agent SDKs",
+  "license": "MIT",
+  "files": [
+    "agent.wit"
+  ],
+  "type": "module"
+}
