@@ -23,5 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Python
+__pycache__/
+
 # AI agent worktrees
 .claude/worktrees/
