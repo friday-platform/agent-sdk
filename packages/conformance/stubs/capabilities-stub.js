@@ -61,7 +61,7 @@ export async function callTool(name, args) {
   const parsed = await Promise.resolve(JSON.parse(args));
   toolCalls.push({ name, args: parsed });
 
-  if (name === "fail") {
+  if (name === "fail" || name === "nonexistent_tool") {
     throw new ComponentError("tool-not-found");
   }
 
