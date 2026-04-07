@@ -1,0 +1,59 @@
+import { beforeEach, describe, expect, it } from "vite-plus/test";
+import { agent as echoAgent } from "../../python/examples/echo-agent/agent-js/agent.js";
+import { agent as toolsAgent } from "../../python/examples/tools-agent/agent-js/agent.js";
+import { reset } from "../stubs/capabilities-stub.js";
+
+const contextJson = JSON.stringify({ env: {}, config: {} });
+
+describe("execution conformance", () => {
+  beforeEach(() => {
+    reset();
+  });
+
+  describe("ok variant", () => {
+    it("echo-agent returns prompt as-is", async () => {
+      const result = await echoAgent.execute("hello", contextJson);
+      expect(result.tag).toBe("ok");
+      expect(result.val).toBe("hello");
+    });
+
+    it("result.val is always a string", async () => {
+      const result = await echoAgent.execute("test", contextJson);
+      expect(typeof result.val).toBe("string");
+    });
+
+    it("complex input with spaces and symbols survives round-trip", async () => {
+      const input = "complex input with spaces & symbols! @#$%^*()";
+      const result = await echoAgent.execute(input, contextJson);
+      expect(result.tag).toBe("ok");
+      expect(result.val).toBe(input);
+    });
+
+    it("tools-agent returns structured JSON on success", async () => {
+      const result = await toolsAgent.execute("hello", contextJson);
+      expect(result.tag).toBe("ok");
+      const parsed = JSON.parse(result.val);
+      expect(parsed.tool_result).toEqual({ tool: "echo", received: { msg: "hello" } });
+    });
+  });
+
+  describe("err variant", () => {
+    it("tools-agent returns err for fail: prefix", async () => {
+      const result = await toolsAgent.execute("fail:something", contextJson);
+      expect(result.tag).toBe("err");
+      expect(result.val).toBe("tool-not-found");
+    });
+
+    it("err result.val is a string", async () => {
+      const result = await toolsAgent.execute("fail:test", contextJson);
+      expect(typeof result.val).toBe("string");
+    });
+  });
+
+  describe("async behavior", () => {
+    it("execute() returns a Promise", () => {
+      const result = echoAgent.execute("test", contextJson);
+      expect(result).toBeInstanceOf(Promise);
+    });
+  });
+});
