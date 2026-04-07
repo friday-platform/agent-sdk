@@ -6,6 +6,9 @@ export default defineConfig({
   },
   fmt: {},
   lint: { options: { typeAware: true, typeCheck: true } },
+  test: {
+    execArgv: ["--experimental-wasm-jspi"],
+  },
   run: {
     cache: true,
   },
