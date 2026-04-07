@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentExecutionContext",
+  "description": "Context JSON passed as the second argument to execute()",
+  "type": "object",
+  "required": ["env", "config"],
+  "properties": {
+    "env": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Environment variables"
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Agent-specific configuration"
+    },
+    "session": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["id", "workspace_id", "user_id", "datetime"],
+          "properties": {
+            "id": { "type": "string" },
+            "workspace_id": { "type": "string" },
+            "user_id": { "type": "string" },
+            "datetime": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ],
+      "description": "Session metadata (null when no session)"
+    },
+    "llm_config": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "LLM configuration from agent metadata"
+    },
+    "output_schema": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional output schema for structured output"
+    }
+  },
+  "additionalProperties": false
+}

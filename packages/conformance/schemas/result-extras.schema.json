@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ResultExtras",
+  "description": "Rich result envelope returned by execute() on success (JSON inside the ok variant)",
+  "type": "object",
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "description": "Primary result data (string or structured object)"
+    },
+    "artifactRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "summary"],
+        "properties": {
+          "id": { "type": "string", "description": "Artifact ID" },
+          "type": { "type": "string", "description": "Artifact type (e.g., document, code, data)" },
+          "summary": { "type": "string", "description": "Brief summary of artifact contents" }
+        },
+        "additionalProperties": false
+      },
+      "description": "References to artifacts created by the agent"
+    },
+    "outlineRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["service", "title"],
+        "properties": {
+          "service": { "type": "string", "description": "Service identifier" },
+          "title": { "type": "string", "description": "Display title" },
+          "content": { "type": "string", "description": "Optional summary text" },
+          "artifactId": { "type": "string", "description": "Optional associated artifact ID" },
+          "artifactLabel": { "type": "string", "description": "Optional artifact label" },
+          "type": { "type": "string", "description": "Optional type discriminator" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Structured references for UI outline display"
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Agent reasoning or explanation"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HttpFetchResponse",
+  "description": "Response payload from the httpFetch host capability",
+  "type": "object",
+  "required": ["status", "headers", "body"],
+  "properties": {
+    "status": {
+      "type": "number",
+      "description": "HTTP status code"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Response headers"
+    },
+    "body": {
+      "type": "string",
+      "description": "Response body"
+    }
+  },
+  "additionalProperties": false
+}
