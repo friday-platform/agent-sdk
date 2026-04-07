@@ -3,7 +3,7 @@
 Exercises bash tool through the WASM boundary: echo, exit codes, cwd, env, clone.
 """
 
-from friday_agent_sdk import agent, ok, err, parse_input
+from friday_agent_sdk import agent, err, ok, parse_input
 from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
 
 
@@ -33,17 +33,27 @@ def execute(prompt, ctx):
         return ok({"bash_result": result})
 
     if action == "env":
-        result = ctx.tools.call("bash", {
-            "command": "echo $QA_TEST_VAR",
-            "env": {"QA_TEST_VAR": "wasm-bridge-works"}
-        })
+        result = ctx.tools.call(
+            "bash",
+            {
+                "command": "echo $QA_TEST_VAR",
+                "env": {"QA_TEST_VAR": "wasm-bridge-works"},
+            },
+        )
         return ok({"bash_result": result})
 
     if action == "clone":
         repo_url = cmd["repo_url"]
-        result = ctx.tools.call("bash", {
-            "command": f"git clone --depth 1 {repo_url} /tmp/qa-bash-clone-test && ls /tmp/qa-bash-clone-test"
-        })
+        result = ctx.tools.call(
+            "bash",
+            {
+                "command": (
+                    f"git clone --depth 1 {repo_url}"
+                    " /tmp/qa-bash-clone-test"
+                    " && ls /tmp/qa-bash-clone-test"
+                )
+            },
+        )
         ctx.tools.call("bash", {"command": "rm -rf /tmp/qa-bash-clone-test"})
         return ok({"bash_result": result})
 

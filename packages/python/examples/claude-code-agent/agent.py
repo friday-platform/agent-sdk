@@ -11,7 +11,6 @@ from friday_agent_sdk import AgentExtras, ArtifactRef, agent, err, ok
 from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
 from friday_agent_sdk._result import ErrResult, OkResult
 
-
 # ---------------------------------------------------------------------------
 # Pre-processing
 # ---------------------------------------------------------------------------
@@ -39,11 +38,15 @@ _EXTRACTION_SCHEMA = {
     "properties": {
         "repo": {
             "type": ["string", "null"],
-            "description": "Repository in owner/repo format, or null if no clone instruction",
+            "description": (
+                "Repository in owner/repo format, or null if no clone instruction"
+            ),
         },
         "task": {
             "type": "string",
-            "description": "Task with clone instruction removed, or original prompt verbatim",
+            "description": (
+                "Task with clone instruction removed, or original prompt verbatim"
+            ),
         },
         "effort": {
             "type": "string",
@@ -100,19 +103,23 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
     """Create a platform artifact to persist the output. Returns ref or None."""
     try:
         response = ctx.http.fetch(
-            f"{ctx.config.get('platformUrl', 'http://localhost:8080')}"
-            "/api/artifacts",
+            f"{ctx.config.get('platformUrl', 'http://localhost:8080')}/api/artifacts",
             method="POST",
             headers={"Content-Type": "application/json"},
-            body=json.dumps({
-                "data": {
-                    "type": "summary",
-                    "version": 1,
-                    "data": data,
-                },
-                "title": "Claude Code Output",
-                "summary": f"Claude Code: {prompt[:100]}{'...' if len(prompt) > 100 else ''}",
-            }),
+            body=json.dumps(
+                {
+                    "data": {
+                        "type": "summary",
+                        "version": 1,
+                        "data": data,
+                    },
+                    "title": "Claude Code Output",
+                    "summary": (
+                        f"Claude Code: {prompt[:100]}"
+                        f"{'...' if len(prompt) > 100 else ''}"
+                    ),
+                }
+            ),
         )
         if response.status < 400:
             result = response.json()
@@ -130,6 +137,7 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
 # ---------------------------------------------------------------------------
 # Agent
 # ---------------------------------------------------------------------------
+
 
 @agent(
     id="claude-code",
@@ -189,10 +197,12 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
     prep = None
     try:
         result = ctx.llm.generate_object(
-            messages=[{
-                "role": "user",
-                "content": f"{_EXTRACTION_PROMPT}{prompt}",
-            }],
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"{_EXTRACTION_PROMPT}{prompt}",
+                }
+            ],
             schema=_EXTRACTION_SCHEMA,
         )
         prep = result.object
@@ -248,10 +258,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
 
     # --- Phase 5: Artifact creation (best-effort) ---
     _progress("Saving artifact")
-    artifact_data = (
-        json.dumps(result.object) if result.object
-        else response_text
-    )
+    artifact_data = json.dumps(result.object) if result.object else response_text
     artifact_ref = _create_artifact(ctx, prompt, artifact_data)
     extras = AgentExtras(artifact_refs=[artifact_ref]) if artifact_ref else None
 

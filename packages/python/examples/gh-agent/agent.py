@@ -99,8 +99,7 @@ def _parse_pr_url(pr_url: str) -> dict:
     segments = [s for s in parsed.path.split("/") if s]
     if len(segments) < 4 or segments[2] != "pull":
         raise ValueError(
-            f"Invalid PR URL path: {parsed.path}. "
-            "Expected: /owner/repo/pull/123"
+            f"Invalid PR URL path: {parsed.path}. Expected: /owner/repo/pull/123"
         )
 
     return {
@@ -134,9 +133,7 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
         headers=meta_headers,
     )
     if meta_resp.status >= 400:
-        return err(
-            f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}"
-        )
+        return err(f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}")
     pr_data = json.loads(meta_resp.body)
 
     head_ref = pr_data["head"]["ref"]
@@ -146,35 +143,44 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
     clone_dir = f"/tmp/gh-clone-{uuid.uuid4()}"
 
     # Clone using GH_TOKEN via credential env vars
-    clone_result = ctx.tools.call("bash", {
-        "command": f"git clone --quiet {clone_url} {clone_dir}",
-        "env": {
-            "GIT_ASKPASS": "echo",
-            "GIT_TERMINAL_PROMPT": "0",
-            "GIT_USERNAME": "x-access-token",
-            "GIT_PASSWORD": gh_token,
-            "GIT_CONFIG_COUNT": "1",
-            "GIT_CONFIG_KEY_0": "credential.helper",
-            "GIT_CONFIG_VALUE_0": (
-                "!f() { echo username=x-access-token; "
-                f"echo password={gh_token}; "
-                "};f"
-            ),
+    clone_result = ctx.tools.call(
+        "bash",
+        {
+            "command": f"git clone --quiet {clone_url} {clone_dir}",
+            "env": {
+                "GIT_ASKPASS": "echo",
+                "GIT_TERMINAL_PROMPT": "0",
+                "GIT_USERNAME": "x-access-token",
+                "GIT_PASSWORD": gh_token,
+                "GIT_CONFIG_COUNT": "1",
+                "GIT_CONFIG_KEY_0": "credential.helper",
+                "GIT_CONFIG_VALUE_0": (
+                    "!f() { echo username=x-access-token; "
+                    f"echo password={gh_token}; "
+                    "};f"
+                ),
+            },
         },
-    })
+    )
 
     if clone_result.get("exit_code", 1) != 0:
         # Attempt cleanup
-        ctx.tools.call("bash", {
-            "command": f"rm -rf {clone_dir}",
-        })
+        ctx.tools.call(
+            "bash",
+            {
+                "command": f"rm -rf {clone_dir}",
+            },
+        )
         stderr = clone_result.get("stderr", "")
         return err(f"git clone failed: {stderr}")
 
     # Checkout the PR head branch
-    checkout_result = ctx.tools.call("bash", {
-        "command": f"cd {clone_dir} && git checkout --quiet {head_ref}",
-    })
+    checkout_result = ctx.tools.call(
+        "bash",
+        {
+            "command": f"cd {clone_dir} && git checkout --quiet {head_ref}",
+        },
+    )
 
     if checkout_result.get("exit_code", 1) != 0:
         ctx.tools.call("bash", {"command": f"rm -rf {clone_dir}"})
@@ -195,25 +201,27 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
         files_data = json.loads(files_resp.body)
         changed_files = [f["filename"] for f in files_data]
 
-    return ok({
-        "operation": "clone",
-        "success": True,
-        "data": {
-            "path": clone_dir,
-            "repo": nwo,
-            "branch": head_ref,
-            "base_branch": base_ref,
-            "pr_number": pr_number,
-            "pr_url": config.pr_url,
-            "head_sha": head_sha,
-            "pr_metadata": {
-                "title": pr_data.get("title", ""),
-                "state": pr_data.get("state", ""),
-                "author": pr_data.get("user", {}).get("login", ""),
+    return ok(
+        {
+            "operation": "clone",
+            "success": True,
+            "data": {
+                "path": clone_dir,
+                "repo": nwo,
+                "branch": head_ref,
+                "base_branch": base_ref,
+                "pr_number": pr_number,
+                "pr_url": config.pr_url,
+                "head_sha": head_sha,
+                "pr_metadata": {
+                    "title": pr_data.get("title", ""),
+                    "state": pr_data.get("state", ""),
+                    "author": pr_data.get("user", {}).get("login", ""),
+                },
+                "changed_files": changed_files,
             },
-            "changed_files": changed_files,
-        },
-    })
+        }
+    )
 
 
 def _pr_view(config: PrViewConfig, ctx) -> OkResult | ErrResult:
@@ -230,25 +238,25 @@ def _pr_view(config: PrViewConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"GitHub API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "pr-view",
-        "success": True,
-        "data": {
-            "title": data.get("title"),
-            "state": data.get("state"),
-            "user": data.get("user", {}).get("login"),
-            "base_ref": data.get("base", {}).get("ref"),
-            "head_ref": data.get("head", {}).get("ref"),
-            "additions": data.get("additions"),
-            "deletions": data.get("deletions"),
-            "changed_files": data.get("changed_files"),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-view",
+            "success": True,
+            "data": {
+                "title": data.get("title"),
+                "state": data.get("state"),
+                "user": data.get("user", {}).get("login"),
+                "base_ref": data.get("base", {}).get("ref"),
+                "head_ref": data.get("head", {}).get("ref"),
+                "additions": data.get("additions"),
+                "deletions": data.get("deletions"),
+                "changed_files": data.get("changed_files"),
+            },
+        }
+    )
 
 
 def _pr_diff(config: PrDiffConfig, ctx) -> OkResult | ErrResult:
@@ -267,17 +275,17 @@ def _pr_diff(config: PrDiffConfig, ctx) -> OkResult | ErrResult:
         )
 
         if response.status >= 400:
-            return err(
-                f"GitHub API error {response.status}: {response.body[:500]}"
-            )
+            return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
         files_data = json.loads(response.body)
         files = [f["filename"] for f in files_data]
-        return ok({
-            "operation": "pr-diff",
-            "success": True,
-            "data": {"files": files, "count": len(files)},
-        })
+        return ok(
+            {
+                "operation": "pr-diff",
+                "success": True,
+                "data": {"files": files, "count": len(files)},
+            }
+        )
 
     # Full diff via Accept: application/vnd.github.diff
     response = ctx.http.fetch(
@@ -289,15 +297,15 @@ def _pr_diff(config: PrDiffConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"GitHub API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
-    return ok({
-        "operation": "pr-diff",
-        "success": True,
-        "data": {"diff": response.body},
-    })
+    return ok(
+        {
+            "operation": "pr-diff",
+            "success": True,
+            "data": {"diff": response.body},
+        }
+    )
 
 
 def _pr_files(config: PrFilesConfig, ctx) -> OkResult | ErrResult:
@@ -314,20 +322,17 @@ def _pr_files(config: PrFilesConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"GitHub API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
     files_data = json.loads(response.body)
-    files = [
-        {"filename": f["filename"], "status": f["status"]}
-        for f in files_data
-    ]
-    return ok({
-        "operation": "pr-files",
-        "success": True,
-        "data": {"files": files, "count": len(files)},
-    })
+    files = [{"filename": f["filename"], "status": f["status"]} for f in files_data]
+    return ok(
+        {
+            "operation": "pr-files",
+            "success": True,
+            "data": {"files": files, "count": len(files)},
+        }
+    )
 
 
 def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
@@ -348,9 +353,7 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"GitHub API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
     comments = json.loads(response.body)
 
@@ -369,34 +372,40 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
                 "replies": [],
             }
         else:
-            orphan_replies.append({
-                "in_reply_to_id": c["in_reply_to_id"],
-                "user": c.get("user", {}).get("login", ""),
-                "body": c.get("body", ""),
-                "created_at": c.get("created_at", ""),
-            })
+            orphan_replies.append(
+                {
+                    "in_reply_to_id": c["in_reply_to_id"],
+                    "user": c.get("user", {}).get("login", ""),
+                    "body": c.get("body", ""),
+                    "created_at": c.get("created_at", ""),
+                }
+            )
 
     for r in orphan_replies:
         root = roots.get(r["in_reply_to_id"])
         if root:
-            root["replies"].append({
-                "user": r["user"],
-                "body": r["body"],
-                "created_at": r["created_at"],
-            })
+            root["replies"].append(
+                {
+                    "user": r["user"],
+                    "body": r["body"],
+                    "created_at": r["created_at"],
+                }
+            )
 
     threads = list(roots.values())
-    return ok({
-        "operation": "pr-read-threads",
-        "success": True,
-        "data": {
-            "threads": threads,
-            "total_threads": len(threads),
-            "threads_with_replies": sum(
-                1 for t in threads if len(t["replies"]) > 0
-            ),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-read-threads",
+            "success": True,
+            "data": {
+                "threads": threads,
+                "total_threads": len(threads),
+                "threads_with_replies": sum(
+                    1 for t in threads if len(t["replies"]) > 0
+                ),
+            },
+        }
+    )
 
 
 def _gh_headers(ctx) -> dict[str, str]:
@@ -430,7 +439,8 @@ def _build_comment_body(finding: dict) -> str:
 
 
 def _build_failed_findings_summary(
-    failed: list[dict], findings: list[dict],
+    failed: list[dict],
+    findings: list[dict],
 ) -> list[str]:
     """Build summary sections for findings that failed to post inline."""
     parts: list[str] = []
@@ -445,24 +455,32 @@ def _build_failed_findings_summary(
                 if finding.get("suggestion")
                 else ""
             )
-            parts.extend([
-                "",
-                "<details>",
-                f"<summary><b>{finding['severity']}</b> · <code>{finding['file']}:{finding['line']}</code> — {finding['title']}</summary>",
-                "",
-                f"**Category:** {finding['category']}",
-                "",
-                finding["description"],
-                suggestion_block,
-                "",
-                "</details>",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "<details>",
+                    f"<summary><b>{finding['severity']}</b> · "
+                    f"<code>{finding['file']}:{finding['line']}</code>"
+                    f" — {finding['title']}</summary>",
+                    "",
+                    f"**Category:** {finding['category']}",
+                    "",
+                    finding["description"],
+                    suggestion_block,
+                    "",
+                    "</details>",
+                ]
+            )
     return parts
 
 
 def _post_inline_comments(
-    findings: list[dict], owner: str, repo: str, pr_number: int,
-    commit_id: str, ctx,
+    findings: list[dict],
+    owner: str,
+    repo: str,
+    pr_number: int,
+    commit_id: str,
+    ctx,
 ) -> tuple[list[dict], list[dict]]:
     """Post findings as inline PR review comments. Returns (posted, failed)."""
     posted: list[dict] = []
@@ -493,17 +511,23 @@ def _post_inline_comments(
         if response.status < 400:
             posted.append({"path": finding["file"], "line": finding["line"]})
         else:
-            failed.append({
-                "path": finding["file"],
-                "line": finding["line"],
-                "error": response.body[:200],
-            })
+            failed.append(
+                {
+                    "path": finding["file"],
+                    "line": finding["line"],
+                    "error": response.body[:200],
+                }
+            )
 
     return posted, failed
 
 
 def _post_review_summary(
-    summary_body: str, owner: str, repo: str, pr_number: int, ctx,
+    summary_body: str,
+    owner: str,
+    repo: str,
+    pr_number: int,
+    ctx,
 ) -> None:
     """Post a review summary as an issue comment."""
     nwo = f"{owner}/{repo}"
@@ -529,20 +553,20 @@ def _pr_review(config: PrReviewConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"GitHub API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"GitHub API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "pr-review",
-        "success": True,
-        "data": {
-            "pr_number": pr_number,
-            "repo": nwo,
-            "comment_id": data.get("id"),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-review",
+            "success": True,
+            "data": {
+                "pr_number": pr_number,
+                "repo": nwo,
+                "comment_id": data.get("id"),
+            },
+        }
+    )
 
 
 def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult:
@@ -564,7 +588,12 @@ def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult
         commit_id = pr_data["head"]["sha"]
 
     posted, failed = _post_inline_comments(
-        config.findings, owner, repo, pr_number, commit_id, ctx,
+        config.findings,
+        owner,
+        repo,
+        pr_number,
+        commit_id,
+        ctx,
     )
 
     summary_parts = [
@@ -588,19 +617,25 @@ def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult
     ]
 
     _post_review_summary(
-        "\n".join(summary_parts), owner, repo, pr_number, ctx,
+        "\n".join(summary_parts),
+        owner,
+        repo,
+        pr_number,
+        ctx,
     )
 
-    return ok({
-        "operation": "pr-inline-review",
-        "success": True,
-        "data": {
-            "pr_number": pr_number,
-            "repo": nwo,
-            "posted_comments": len(posted),
-            "failed_comments": len(failed),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-inline-review",
+            "success": True,
+            "data": {
+                "pr_number": pr_number,
+                "repo": nwo,
+                "posted_comments": len(posted),
+                "failed_comments": len(failed),
+            },
+        }
+    )
 
 
 def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult:
@@ -611,7 +646,7 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
 
     # Post thread replies
     replies_posted = 0
-    for reply in (config.thread_replies or []):
+    for reply in config.thread_replies or []:
         resp = ctx.http.fetch(
             f"https://api.github.com/repos/{nwo}/pulls/{pr_number}/comments/{reply['comment_id']}/replies",
             method="POST",
@@ -634,12 +669,19 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
                 headers=_gh_headers(ctx),
             )
             if meta_resp.status >= 400:
-                return err(f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}")
+                return err(
+                    f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}"
+                )
             pr_data = json.loads(meta_resp.body)
             commit_id = pr_data["head"]["sha"]
 
         posted, failed = _post_inline_comments(
-            new_findings, owner, repo, pr_number, commit_id, ctx,
+            new_findings,
+            owner,
+            repo,
+            pr_number,
+            commit_id,
+            ctx,
         )
 
     # Post summary
@@ -660,20 +702,26 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
     ]
 
     _post_review_summary(
-        "\n".join(summary_parts), owner, repo, pr_number, ctx,
+        "\n".join(summary_parts),
+        owner,
+        repo,
+        pr_number,
+        ctx,
     )
 
-    return ok({
-        "operation": "pr-post-followup",
-        "success": True,
-        "data": {
-            "pr_number": pr_number,
-            "repo": nwo,
-            "thread_replies_posted": replies_posted,
-            "new_comments_posted": len(posted),
-            "failed_comments": len(failed),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-post-followup",
+            "success": True,
+            "data": {
+                "pr_number": pr_number,
+                "repo": nwo,
+                "thread_replies_posted": replies_posted,
+                "new_comments_posted": len(posted),
+                "failed_comments": len(failed),
+            },
+        }
+    )
 
 
 @agent(id="gh", version="1.0.0", description="GitHub PR operations agent")

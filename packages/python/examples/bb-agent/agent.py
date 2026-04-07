@@ -214,29 +214,29 @@ def _pr_view(config: PrViewConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"Bitbucket API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"Bitbucket API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "pr-view",
-        "success": True,
-        "data": {
-            "title": data.get("title"),
-            "description": data.get("description"),
-            "author": data.get("author", {}).get("display_name"),
-            "author_uuid": data.get("author", {}).get("uuid"),
-            "state": data.get("state"),
-            "source_branch": data.get("source", {}).get("branch", {}).get("name"),
-            "destination_branch": (
-                data.get("destination", {}).get("branch", {}).get("name")
-            ),
-            "head_sha": data.get("source", {}).get("commit", {}).get("hash"),
-            "created_on": data.get("created_on"),
-            "updated_on": data.get("updated_on"),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-view",
+            "success": True,
+            "data": {
+                "title": data.get("title"),
+                "description": data.get("description"),
+                "author": data.get("author", {}).get("display_name"),
+                "author_uuid": data.get("author", {}).get("uuid"),
+                "state": data.get("state"),
+                "source_branch": data.get("source", {}).get("branch", {}).get("name"),
+                "destination_branch": (
+                    data.get("destination", {}).get("branch", {}).get("name")
+                ),
+                "head_sha": data.get("source", {}).get("commit", {}).get("hash"),
+                "created_on": data.get("created_on"),
+                "updated_on": data.get("updated_on"),
+            },
+        }
+    )
 
 
 def _pr_diff(config: PrDiffConfig, ctx) -> OkResult | ErrResult:
@@ -250,23 +250,25 @@ def _pr_diff(config: PrDiffConfig, ctx) -> OkResult | ErrResult:
     response = _bb_fetch(url, ctx, accept="text/plain")
 
     if response.status >= 400:
-        return err(
-            f"Bitbucket API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"Bitbucket API error {response.status}: {response.body[:500]}")
 
     if config.name_only:
         files = re.findall(r"^diff --git a/.+ b/(.+)$", response.body, re.MULTILINE)
-        return ok({
+        return ok(
+            {
+                "operation": "pr-diff",
+                "success": True,
+                "data": {"files": files, "count": len(files)},
+            }
+        )
+
+    return ok(
+        {
             "operation": "pr-diff",
             "success": True,
-            "data": {"files": files, "count": len(files)},
-        })
-
-    return ok({
-        "operation": "pr-diff",
-        "success": True,
-        "data": {"diff": response.body},
-    })
+            "data": {"diff": response.body},
+        }
+    )
 
 
 def _pr_files(config: PrFilesConfig, ctx) -> OkResult | ErrResult:
@@ -283,11 +285,13 @@ def _pr_files(config: PrFilesConfig, ctx) -> OkResult | ErrResult:
         entry.get("new", {}).get("path") or entry.get("old", {}).get("path", "")
         for entry in entries
     ]
-    return ok({
-        "operation": "pr-files",
-        "success": True,
-        "data": {"files": files, "count": len(files)},
-    })
+    return ok(
+        {
+            "operation": "pr-files",
+            "success": True,
+            "data": {"files": files, "count": len(files)},
+        }
+    )
 
 
 def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
@@ -323,24 +327,28 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
     for r in orphan_replies:
         parent_id = r.get("parent", {}).get("id")
         if parent_id in roots:
-            roots[parent_id]["replies"].append({
-                "user": r.get("user", {}).get("uuid", ""),
-                "body": r.get("content", {}).get("raw", ""),
-                "created_at": r.get("created_on", ""),
-            })
+            roots[parent_id]["replies"].append(
+                {
+                    "user": r.get("user", {}).get("uuid", ""),
+                    "body": r.get("content", {}).get("raw", ""),
+                    "created_at": r.get("created_on", ""),
+                }
+            )
 
     threads = list(roots.values())
-    return ok({
-        "operation": "pr-read-threads",
-        "success": True,
-        "data": {
-            "threads": threads,
-            "total_threads": len(threads),
-            "threads_with_replies": sum(
-                1 for t in threads if len(t["replies"]) > 0
-            ),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-read-threads",
+            "success": True,
+            "data": {
+                "threads": threads,
+                "total_threads": len(threads),
+                "threads_with_replies": sum(
+                    1 for t in threads if len(t["replies"]) > 0
+                ),
+            },
+        }
+    )
 
 
 def _pr_review(config: PrReviewConfig, ctx) -> OkResult | ErrResult:
@@ -362,20 +370,20 @@ def _pr_review(config: PrReviewConfig, ctx) -> OkResult | ErrResult:
     response = ctx.http.fetch(url, method="POST", headers=headers, body=body)
 
     if response.status >= 400:
-        return err(
-            f"Bitbucket API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"Bitbucket API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "pr-review",
-        "success": True,
-        "data": {
-            "pr_number": pr_id,
-            "repo": f"{workspace}/{repo_slug}",
-            "comment_id": data.get("id"),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-review",
+            "success": True,
+            "data": {
+                "pr_number": pr_id,
+                "repo": f"{workspace}/{repo_slug}",
+                "comment_id": data.get("id"),
+            },
+        }
+    )
 
 
 def _build_comment_body(finding: dict) -> str:
@@ -416,18 +424,22 @@ def _build_failed_findings_summary(
                 if finding.get("suggestion")
                 else ""
             )
-            parts.extend([
-                "",
-                "<details>",
-                f"<summary><b>{finding['severity']}</b> · <code>{finding['file']}:{finding['line']}</code> — {finding['title']}</summary>",
-                "",
-                f"**Category:** {finding['category']}",
-                "",
-                finding["description"],
-                suggestion_block,
-                "",
-                "</details>",
-            ])
+            parts.extend(
+                [
+                    "",
+                    "<details>",
+                    f"<summary><b>{finding['severity']}</b> · "
+                    f"<code>{finding['file']}:{finding['line']}</code>"
+                    f" — {finding['title']}</summary>",
+                    "",
+                    f"**Category:** {finding['category']}",
+                    "",
+                    finding["description"],
+                    suggestion_block,
+                    "",
+                    "</details>",
+                ]
+            )
     return parts
 
 
@@ -448,17 +460,21 @@ def _post_inline_comments(
 
     for finding in findings:
         body = _build_comment_body(finding)
-        payload = json.dumps({
-            "content": {"raw": body},
-            "inline": {"path": finding["file"], "to": finding["line"]},
-        })
+        payload = json.dumps(
+            {
+                "content": {"raw": body},
+                "inline": {"path": finding["file"], "to": finding["line"]},
+            }
+        )
         response = ctx.http.fetch(url, method="POST", headers=headers, body=payload)
         if response.status >= 400:
-            failed.append({
-                "path": finding["file"],
-                "line": finding["line"],
-                "error": f"HTTP {response.status}",
-            })
+            failed.append(
+                {
+                    "path": finding["file"],
+                    "line": finding["line"],
+                    "error": f"HTTP {response.status}",
+                }
+            )
         else:
             posted.append({"path": finding["file"], "line": finding["line"]})
 
@@ -512,20 +528,20 @@ def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult
         "*Automated review by Friday*",
     ]
 
-    _post_general_comment(
-        "\n".join(summary_parts), workspace, repo_slug, pr_id, ctx
-    )
+    _post_general_comment("\n".join(summary_parts), workspace, repo_slug, pr_id, ctx)
 
-    return ok({
-        "operation": "pr-inline-review",
-        "success": True,
-        "data": {
-            "pr_number": pr_id,
-            "repo": f"{workspace}/{repo_slug}",
-            "posted_comments": len(posted),
-            "failed_comments": len(failed),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-inline-review",
+            "success": True,
+            "data": {
+                "pr_number": pr_id,
+                "repo": f"{workspace}/{repo_slug}",
+                "posted_comments": len(posted),
+                "failed_comments": len(failed),
+            },
+        }
+    )
 
 
 def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult:
@@ -546,10 +562,12 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
     # Post thread replies
     replies_posted = 0
     for reply in config.thread_replies:
-        payload = json.dumps({
-            "content": {"raw": reply["body"]},
-            "parent": {"id": reply["comment_id"]},
-        })
+        payload = json.dumps(
+            {
+                "content": {"raw": reply["body"]},
+                "parent": {"id": reply["comment_id"]},
+            }
+        )
         response = ctx.http.fetch(url, method="POST", headers=headers, body=payload)
         if response.status < 400:
             replies_posted += 1
@@ -577,21 +595,21 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
         "*Automated follow-up by Friday*",
     ]
 
-    _post_general_comment(
-        "\n".join(summary_parts), workspace, repo_slug, pr_id, ctx
-    )
+    _post_general_comment("\n".join(summary_parts), workspace, repo_slug, pr_id, ctx)
 
-    return ok({
-        "operation": "pr-post-followup",
-        "success": True,
-        "data": {
-            "pr_number": pr_id,
-            "repo": f"{workspace}/{repo_slug}",
-            "thread_replies_posted": replies_posted,
-            "new_comments_posted": len(posted),
-            "failed_comments": len(failed),
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-post-followup",
+            "success": True,
+            "data": {
+                "pr_number": pr_id,
+                "repo": f"{workspace}/{repo_slug}",
+                "thread_replies_posted": replies_posted,
+                "new_comments_posted": len(posted),
+                "failed_comments": len(failed),
+            },
+        }
+    )
 
 
 def _pr_create(config: PrCreateConfig, ctx) -> OkResult | ErrResult:
@@ -622,34 +640,36 @@ def _pr_create(config: PrCreateConfig, ctx) -> OkResult | ErrResult:
         "User-Agent": "friday-bb-agent",
         **_bb_auth_header(ctx),
     }
-    body = json.dumps({
-        "title": config.title,
-        "description": desc,
-        "source": {"branch": {"name": config.source_branch}},
-        "destination": {"branch": {"name": config.destination_branch}},
-        "close_source_branch": config.close_source_branch,
-    })
+    body = json.dumps(
+        {
+            "title": config.title,
+            "description": desc,
+            "source": {"branch": {"name": config.source_branch}},
+            "destination": {"branch": {"name": config.destination_branch}},
+            "close_source_branch": config.close_source_branch,
+        }
+    )
 
     response = ctx.http.fetch(url, method="POST", headers=headers, body=body)
 
     if response.status >= 400:
-        return err(
-            f"Bitbucket API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"Bitbucket API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "pr-create",
-        "success": True,
-        "data": {
-            "pr_number": data.get("id"),
-            "pr_url": data.get("links", {}).get("html", {}).get("href"),
-            "repo": f"{workspace}/{repo_slug}",
-            "source_branch": config.source_branch,
-            "destination_branch": config.destination_branch,
-            "title": config.title,
-        },
-    })
+    return ok(
+        {
+            "operation": "pr-create",
+            "success": True,
+            "data": {
+                "pr_number": data.get("id"),
+                "pr_url": data.get("links", {}).get("html", {}).get("href"),
+                "repo": f"{workspace}/{repo_slug}",
+                "source_branch": config.source_branch,
+                "destination_branch": config.destination_branch,
+                "title": config.title,
+            },
+        }
+    )
 
 
 def _git_credential_env(ctx) -> dict[str, str]:
@@ -662,8 +682,8 @@ def _git_credential_env(ctx) -> dict[str, str]:
     askpass_script = (
         "#!/bin/sh\n"
         'case "$1" in\n'
-        '*Username*) printf \'%s\\n\' "$BB_ASKPASS_USER";;\n'
-        '*Password*) printf \'%s\\n\' "$BB_ASKPASS_PASS";;\n'
+        "*Username*) printf '%s\\n' \"$BB_ASKPASS_USER\";;\n"
+        "*Password*) printf '%s\\n' \"$BB_ASKPASS_PASS\";;\n"
         "esac\n"
     )
     askpass_path = f"/tmp/bb-askpass-{uuid.uuid4()}.sh"
@@ -692,7 +712,10 @@ def _bash(ctx, command: str, env: dict[str, str] | None = None) -> dict:
 
 
 def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
-    """Clone a repo for a specific PR: fetch metadata, clone, checkout source branch, get changed files."""
+    """Clone a repo for a specific PR.
+
+    Fetch metadata, clone, checkout source branch, get changed files.
+    """
     parts = _parse_pr_url(config.pr_url)
     workspace = parts["workspace"]
     repo_slug = parts["repo_slug"]
@@ -722,7 +745,12 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
     askpass_script = cred_env.pop("_askpass_script")
 
     try:
-        _bash(ctx, f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}")
+        _bash(
+            ctx,
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
+            f"{askpass_script}ASKPASS_EOF\n"
+            f"chmod 700 {askpass_path}",
+        )
 
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
         _bash(
@@ -731,8 +759,16 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
             env=git_env,
         )
 
-        _bash(ctx, f"cd {clone_dir} && git checkout {source_branch}", env=git_env)
-        branch_result = _bash(ctx, f"cd {clone_dir} && git branch --show-current", env=git_env)
+        _bash(
+            ctx,
+            f"cd {clone_dir} && git checkout {source_branch}",
+            env=git_env,
+        )
+        branch_result = _bash(
+            ctx,
+            f"cd {clone_dir} && git branch --show-current",
+            env=git_env,
+        )
         branch = branch_result.get("stdout", "").strip() or source_branch
 
         _bash(ctx, f"rm -f {askpass_path}")
@@ -751,26 +787,28 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
         for entry in entries
     ]
 
-    return ok({
-        "operation": "clone",
-        "success": True,
-        "data": {
-            "path": clone_dir,
-            "repo": f"{workspace}/{repo_slug}",
-            "branch": branch,
-            "base_branch": dest_branch,
-            "pr_number": pr_id,
-            "pr_url": config.pr_url,
-            "head_sha": head_sha,
-            "pr_metadata": {
-                "title": pr.get("title"),
-                "description": pr.get("description"),
-                "author": pr.get("author", {}).get("display_name"),
-                "state": pr.get("state"),
+    return ok(
+        {
+            "operation": "clone",
+            "success": True,
+            "data": {
+                "path": clone_dir,
+                "repo": f"{workspace}/{repo_slug}",
+                "branch": branch,
+                "base_branch": dest_branch,
+                "pr_number": pr_id,
+                "pr_url": config.pr_url,
+                "head_sha": head_sha,
+                "pr_metadata": {
+                    "title": pr.get("title"),
+                    "description": pr.get("description"),
+                    "author": pr.get("author", {}).get("display_name"),
+                    "state": pr.get("state"),
+                },
+                "changed_files": changed_files,
             },
-            "changed_files": changed_files,
-        },
-    })
+        }
+    )
 
 
 def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
@@ -787,7 +825,12 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
 
     try:
         # Create the askpass script on disk
-        _bash(ctx, f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}")
+        _bash(
+            ctx,
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
+            f"{askpass_script}ASKPASS_EOF\n"
+            f"chmod 700 {askpass_path}",
+        )
 
         # Clone
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
@@ -808,15 +851,17 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
         # Cleanup askpass script
         _bash(ctx, f"rm -f {askpass_path}")
 
-        return ok({
-            "operation": "repo-clone",
-            "success": True,
-            "data": {
-                "path": clone_dir,
-                "repo": f"{workspace}/{repo_slug}",
-                "branch": branch,
-            },
-        })
+        return ok(
+            {
+                "operation": "repo-clone",
+                "success": True,
+                "data": {
+                    "path": clone_dir,
+                    "repo": f"{workspace}/{repo_slug}",
+                    "branch": branch,
+                },
+            }
+        )
     except RuntimeError as e:
         # Cleanup on failure
         try:
@@ -838,27 +883,36 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
 
     try:
         # Create the askpass script on disk
-        _bash(ctx, f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}")
+        _bash(
+            ctx,
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
+            f"{askpass_script}ASKPASS_EOF\n"
+            f"chmod 700 {askpass_path}",
+        )
 
         # Push
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
         _bash(
             ctx,
-            f"cd {config.path} && git -c credential.helper= push -u origin {config.branch}",
+            f"cd {config.path} && "
+            f"git -c credential.helper= "
+            f"push -u origin {config.branch}",
             env=git_env,
         )
 
         # Cleanup askpass script
         _bash(ctx, f"rm -f {askpass_path}")
 
-        return ok({
-            "operation": "repo-push",
-            "success": True,
-            "data": {
-                "repo": f"{workspace}/{repo_slug}",
-                "branch": config.branch,
-            },
-        })
+        return ok(
+            {
+                "operation": "repo-push",
+                "success": True,
+                "data": {
+                    "repo": f"{workspace}/{repo_slug}",
+                    "branch": config.branch,
+                },
+            }
+        )
     except RuntimeError as e:
         try:
             _bash(ctx, f"rm -f {askpass_path}")

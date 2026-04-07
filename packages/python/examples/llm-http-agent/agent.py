@@ -4,13 +4,15 @@ Exercises ctx.llm.generate() and ctx.http.fetch() through the WIT boundary.
 Prompt prefix selects which capability and success/error path to exercise.
 """
 
-import json
-
 from friday_agent_sdk import HttpError, LlmError, agent, err, ok
 from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
 
 
-@agent(id="llm-http-agent", version="1.0.0", description="Exercises LLM and HTTP capabilities")
+@agent(
+    id="llm-http-agent",
+    version="1.0.0",
+    description="Exercises LLM and HTTP capabilities",
+)
 def execute(prompt, ctx):
     from wit_world.imports.capabilities import log
 
@@ -35,13 +37,15 @@ def _handle_llm(user_msg, ctx):
         messages=[{"role": "user", "content": user_msg}],
         model="test-model",
     )
-    return ok({
-        "llm_result": {
-            "text": response.text,
-            "model": response.model,
-            "finish_reason": response.finish_reason,
+    return ok(
+        {
+            "llm_result": {
+                "text": response.text,
+                "model": response.model,
+                "finish_reason": response.finish_reason,
+            }
         }
-    })
+    )
 
 
 def _handle_llm_fail(user_msg, ctx):
@@ -62,12 +66,14 @@ def _handle_http(path, ctx):
         f"https://example.com/{path}",
         method="GET",
     )
-    return ok({
-        "http_result": {
-            "status": response.status,
-            "body": response.body,
+    return ok(
+        {
+            "http_result": {
+                "status": response.status,
+                "body": response.body,
+            }
         }
-    })
+    )
 
 
 def _handle_http_fail(path, ctx):

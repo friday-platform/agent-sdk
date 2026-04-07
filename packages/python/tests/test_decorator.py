@@ -78,12 +78,8 @@ class TestAgentDecorator:
         assert reg.output_schema is MyOutput
 
     def test_stores_environment_and_mcp(self):
-        env_config = {
-            "required": [{"name": "API_KEY", "description": "The API key"}]
-        }
-        mcp_config = {
-            "slack": {"transport": {"type": "stdio", "command": "npx"}}
-        }
+        env_config = {"required": [{"name": "API_KEY", "description": "The API key"}]}
+        mcp_config = {"slack": {"transport": {"type": "stdio", "command": "npx"}}}
 
         @agent(
             id="env-agent",

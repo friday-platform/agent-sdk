@@ -25,6 +25,9 @@ dist-ssr
 
 # Python
 __pycache__/
+.ruff_cache/
+.pytest_cache/
+.venv/
 
 # AI agent worktrees
 .claude/worktrees/

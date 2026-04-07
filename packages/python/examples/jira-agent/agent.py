@@ -95,7 +95,8 @@ def _text_to_adf(text: str) -> dict:
     """
     content = []
     parts = re.split(
-        r'\[([^\]]+)\]\(((?:[^()]*|\([^()]*\))*)\)', text,
+        r"\[([^\]]+)\]\(((?:[^()]*|\([^()]*\))*)\)",
+        text,
     )
     for i, part in enumerate(parts):
         if i % 3 == 0:
@@ -104,25 +105,23 @@ def _text_to_adf(text: str) -> dict:
         elif i % 3 == 1:
             link_text = part
             link_url = parts[i + 1]
-            content.append({
-                "type": "text",
-                "text": link_text,
-                "marks": [
-                    {
-                        "type": "link",
-                        "attrs": {"href": link_url},
-                    }
-                ],
-            })
+            content.append(
+                {
+                    "type": "text",
+                    "text": link_text,
+                    "marks": [
+                        {
+                            "type": "link",
+                            "attrs": {"href": link_url},
+                        }
+                    ],
+                }
+            )
 
     return {
         "type": "doc",
         "version": 1,
-        "content": (
-            [{"type": "paragraph", "content": content}]
-            if content
-            else []
-        ),
+        "content": ([{"type": "paragraph", "content": content}] if content else []),
     }
 
 
@@ -149,60 +148,70 @@ def _issue_view(config: IssueViewConfig, ctx) -> OkResult | ErrResult:
     )
 
     if response.status >= 400:
-        return err(
-            f"Jira API error {response.status}: {response.body[:500]}"
-        )
+        return err(f"Jira API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
     fields = data.get("fields", {})
-    return ok({
-        "operation": "issue-view",
-        "success": True,
-        "data": {
-            "key": data.get("key"),
-            "id": data.get("id"),
-            "summary": fields.get("summary"),
-            "description": _extract_adf_text(fields.get("description")),
-            "status": fields.get("status", {}).get("name"),
-            "priority": fields.get("priority", {}).get("name"),
-            "issue_type": fields.get("issuetype", {}).get("name"),
-            "labels": fields.get("labels", []),
-            "assignee": (
-                fields.get("assignee", {}).get("displayName")
-                if fields.get("assignee")
-                else None
-            ),
-            "reporter": (
-                fields.get("reporter", {}).get("displayName")
-                if fields.get("reporter")
-                else None
-            ),
-            "created": fields.get("created"),
-            "updated": fields.get("updated"),
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-view",
+            "success": True,
+            "data": {
+                "key": data.get("key"),
+                "id": data.get("id"),
+                "summary": fields.get("summary"),
+                "description": _extract_adf_text(fields.get("description")),
+                "status": fields.get("status", {}).get("name"),
+                "priority": fields.get("priority", {}).get("name"),
+                "issue_type": fields.get("issuetype", {}).get("name"),
+                "labels": fields.get("labels", []),
+                "assignee": (
+                    fields.get("assignee", {}).get("displayName")
+                    if fields.get("assignee")
+                    else None
+                ),
+                "reporter": (
+                    fields.get("reporter", {}).get("displayName")
+                    if fields.get("reporter")
+                    else None
+                ),
+                "created": fields.get("created"),
+                "updated": fields.get("updated"),
+            },
+        }
+    )
 
 
 _SEARCH_FIELDS = [
-    "summary", "status", "priority", "issuetype",
-    "labels", "assignee", "reporter", "description",
-    "created", "updated",
+    "summary",
+    "status",
+    "priority",
+    "issuetype",
+    "labels",
+    "assignee",
+    "reporter",
+    "description",
+    "created",
+    "updated",
 ]
 
 
 def _issue_search(
-    config: IssueSearchConfig, ctx,
+    config: IssueSearchConfig,
+    ctx,
 ) -> OkResult | ErrResult:
     """Search Jira issues via JQL using POST /rest/api/3/search/jql."""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/search/jql"
     capped = min(config.max_results, 100)
 
-    body = json.dumps({
-        "jql": config.jql,
-        "maxResults": capped,
-        "fields": _SEARCH_FIELDS,
-    })
+    body = json.dumps(
+        {
+            "jql": config.jql,
+            "maxResults": capped,
+            "fields": _SEARCH_FIELDS,
+        }
+    )
 
     response = ctx.http.fetch(
         url,
@@ -217,43 +226,41 @@ def _issue_search(
     )
 
     if response.status >= 400:
-        return err(
-            f"Jira API error {response.status}: "
-            f"{response.body[:500]}"
-        )
+        return err(f"Jira API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
     issues = []
     for issue in data.get("issues", []):
         fields = issue.get("fields", {})
         priority = fields.get("priority")
-        issues.append({
-            "key": issue["key"],
-            "summary": fields.get("summary"),
-            "status": fields.get("status", {}).get("name"),
-            "priority": (
-                priority.get("name") if priority else None
-            ),
-            "issue_type": (
-                fields.get("issuetype", {}).get("name")
-            ),
-            "labels": fields.get("labels", []),
-        })
+        issues.append(
+            {
+                "key": issue["key"],
+                "summary": fields.get("summary"),
+                "status": fields.get("status", {}).get("name"),
+                "priority": (priority.get("name") if priority else None),
+                "issue_type": (fields.get("issuetype", {}).get("name")),
+                "labels": fields.get("labels", []),
+            }
+        )
 
-    return ok({
-        "operation": "issue-search",
-        "success": True,
-        "data": {
-            "issues": issues,
-            "count": len(issues),
-            "is_last": data.get("isLast", True),
-            "max_results": capped,
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-search",
+            "success": True,
+            "data": {
+                "issues": issues,
+                "count": len(issues),
+                "is_last": data.get("isLast", True),
+                "max_results": capped,
+            },
+        }
+    )
 
 
 def _issue_transition(
-    config: IssueTransitionConfig, ctx,
+    config: IssueTransitionConfig,
+    ctx,
 ) -> OkResult | ErrResult:
     """Transition a Jira issue to a new status.
 
@@ -272,12 +279,11 @@ def _issue_transition(
 
     # 1. Get available transitions
     resp = ctx.http.fetch(
-        f"{base}/transitions", headers=auth_headers,
+        f"{base}/transitions",
+        headers=auth_headers,
     )
     if resp.status >= 400:
-        return err(
-            f"Jira API error {resp.status}: {resp.body[:500]}"
-        )
+        return err(f"Jira API error {resp.status}: {resp.body[:500]}")
 
     transitions = json.loads(resp.body).get("transitions", [])
     target = config.transition_name.lower()
@@ -303,22 +309,23 @@ def _issue_transition(
         body=json.dumps({"transition": {"id": matched["id"]}}),
     )
     if resp.status >= 400:
-        return err(
-            f"Jira API error {resp.status}: {resp.body[:500]}"
-        )
+        return err(f"Jira API error {resp.status}: {resp.body[:500]}")
 
-    return ok({
-        "operation": "issue-transition",
-        "success": True,
-        "data": {
-            "issue_key": config.issue_key,
-            "to_status": matched["name"],
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-transition",
+            "success": True,
+            "data": {
+                "issue_key": config.issue_key,
+                "to_status": matched["name"],
+            },
+        }
+    )
 
 
 def _issue_create(
-    config: IssueCreateConfig, ctx,
+    config: IssueCreateConfig,
+    ctx,
 ) -> OkResult | ErrResult:
     """Create a Jira issue via POST /rest/api/3/issue."""
     site = ctx.env.get("JIRA_SITE", "")
@@ -349,25 +356,25 @@ def _issue_create(
     )
 
     if response.status >= 400:
-        return err(
-            f"Jira API error {response.status}: "
-            f"{response.body[:500]}"
-        )
+        return err(f"Jira API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "issue-create",
-        "success": True,
-        "data": {
-            "key": data.get("key"),
-            "id": data.get("id"),
-            "self": data.get("self"),
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-create",
+            "success": True,
+            "data": {
+                "key": data.get("key"),
+                "id": data.get("id"),
+                "self": data.get("self"),
+            },
+        }
+    )
 
 
 def _issue_update(
-    config: IssueUpdateConfig, ctx,
+    config: IssueUpdateConfig,
+    ctx,
 ) -> OkResult | ErrResult:
     """Update a Jira issue via PUT /rest/api/3/issue/{key}."""
     site = ctx.env.get("JIRA_SITE", "")
@@ -396,30 +403,27 @@ def _issue_update(
     )
 
     if response.status >= 400:
-        return err(
-            f"Jira API error {response.status}: "
-            f"{response.body[:500]}"
-        )
+        return err(f"Jira API error {response.status}: {response.body[:500]}")
 
-    return ok({
-        "operation": "issue-update",
-        "success": True,
-        "data": {
-            "issue_key": config.issue_key,
-            "updated": True,
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-update",
+            "success": True,
+            "data": {
+                "issue_key": config.issue_key,
+                "updated": True,
+            },
+        }
+    )
 
 
 def _issue_comment(
-    config: IssueCommentConfig, ctx,
+    config: IssueCommentConfig,
+    ctx,
 ) -> OkResult | ErrResult:
     """Add a comment to a Jira issue."""
     site = ctx.env.get("JIRA_SITE", "")
-    url = (
-        f"https://{site}/rest/api/3/issue"
-        f"/{config.issue_key}/comment"
-    )
+    url = f"https://{site}/rest/api/3/issue/{config.issue_key}/comment"
 
     response = ctx.http.fetch(
         url,
@@ -434,20 +438,19 @@ def _issue_comment(
     )
 
     if response.status >= 400:
-        return err(
-            f"Jira API error {response.status}: "
-            f"{response.body[:500]}"
-        )
+        return err(f"Jira API error {response.status}: {response.body[:500]}")
 
     data = json.loads(response.body)
-    return ok({
-        "operation": "issue-comment",
-        "success": True,
-        "data": {
-            "issue_key": config.issue_key,
-            "comment_id": str(data.get("id", "")),
-        },
-    })
+    return ok(
+        {
+            "operation": "issue-comment",
+            "success": True,
+            "data": {
+                "issue_key": config.issue_key,
+                "comment_id": str(data.get("id", "")),
+            },
+        }
+    )
 
 
 @agent(id="jira", version="1.0.0", description="Jira issue operations agent")

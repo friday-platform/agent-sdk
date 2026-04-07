@@ -57,22 +57,28 @@ def _handle_convert(prompt, ctx):
     if len(parts) != 4:
         return err("expected: convert <HH:MM> <source_tz> <target_tz>")
     _, time_str, source_tz, target_tz = parts
-    result = ctx.tools.call("convert_time", {
-        "source_timezone": source_tz,
-        "time": time_str,
-        "target_timezone": target_tz,
-    })
+    result = ctx.tools.call(
+        "convert_time",
+        {
+            "source_timezone": source_tz,
+            "time": time_str,
+            "target_timezone": target_tz,
+        },
+    )
     return ok({"convert_result": result})
 
 
 def _handle_combo(ctx):
     """Get current time then convert UTC to America/New_York."""
     time_result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
-    convert_result = ctx.tools.call("convert_time", {
-        "source_timezone": "UTC",
-        "time": "12:00",
-        "target_timezone": "America/New_York",
-    })
+    convert_result = ctx.tools.call(
+        "convert_time",
+        {
+            "source_timezone": "UTC",
+            "time": "12:00",
+            "target_timezone": "America/New_York",
+        },
+    )
     return ok({"time_result": time_result, "convert_result": convert_result})
 
 
