@@ -7,7 +7,6 @@
   "properties": {
     "url": {
       "type": "string",
-      "format": "uri",
       "description": "Target URL"
     },
     "method": {
