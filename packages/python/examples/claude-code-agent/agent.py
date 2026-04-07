@@ -6,6 +6,7 @@ with the host managing subprocess lifecycle and sandbox.
 """
 
 import json
+import re
 
 from friday_agent_sdk import AgentExtras, ArtifactRef, agent, err, ok
 from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
@@ -89,14 +90,29 @@ def _build_system_append(skills: list[dict] | None) -> str:
 
 
 def _parse_structured_output(text: str) -> dict | None:
-    """Parse JSON from response text, validating it's a dict (not array/string)."""
+    """Parse JSON from response text, validating it's a dict (not array/string).
+
+    Handles both raw JSON and JSON inside markdown code fences (```json ... ```).
+    """
+    # Level 1: try direct parse
     try:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
             return parsed
-        return None
     except (json.JSONDecodeError, TypeError):
-        return None
+        pass
+
+    # Level 2: extract from code fences
+    match = re.search(r"```(?:json)?\s*\n(.*?)\n\s*```", text, re.DOTALL)
+    if match:
+        try:
+            parsed = json.loads(match.group(1))
+            if isinstance(parsed, dict):
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    return None
 
 
 def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
@@ -141,7 +157,7 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
 
 @agent(
     id="claude-code",
-    version="1.0.0",
+    version="1.0.1",
     display_name="Claude Code",
     description=(
         "Execute coding tasks in a sandboxed environment via Claude Code SDK. "
@@ -218,7 +234,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
     model, fallback_model = _select_model(effort)
 
     # --- Phase 3: Build provider options ---
-    output_schema = ctx.config.get("outputSchema") if ctx.config else None
+    output_schema = ctx.output_schema
     skills = ctx.config.get("skills") if ctx.config else None
     system_append = _build_system_append(skills)
 

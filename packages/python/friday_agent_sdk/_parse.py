@@ -134,3 +134,64 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
     raise ValueError(
         f"No valid JSON object found in prompt. Prompt starts with: {prompt[:200]}"
     )
+
+
+def parse_operation(prompt: str, schemas: dict[str, type[T]]) -> T:
+    """Extract an operation config from an enriched prompt.
+
+    Like parse_input, but filters to JSON objects containing an "operation"
+    field and uses the discriminator to select the right dataclass schema.
+    Mirrors the TS parseOperationConfig from operation-parser.ts.
+
+    Args:
+        prompt: Enriched prompt text potentially containing multiple JSON objects.
+        schemas: Map of operation name → dataclass type (e.g. {"clone": CloneConfig}).
+
+    Returns:
+        Typed dataclass instance for the matched operation.
+
+    Raises:
+        ValueError: No valid operation config found in prompt.
+    """
+    # 1. Balanced-brace JSON objects containing "operation"
+    for candidate in _extract_json_candidates(prompt):
+        if '"operation"' not in candidate:
+            continue
+        try:
+            raw = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(raw, dict) or "operation" not in raw:
+            continue
+        schema = schemas.get(raw["operation"])
+        if schema is None:
+            continue
+        try:
+            return parse_input(candidate, schema)
+        except (ValueError, TypeError):
+            continue
+
+    # 2. Code-fenced JSON blocks containing "operation"
+    for match in re.finditer(r"```json\s*([\s\S]*?)```", prompt):
+        block = match.group(1)
+        if '"operation"' not in block:
+            continue
+        try:
+            raw = json.loads(block)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(raw, dict) or "operation" not in raw:
+            continue
+        schema = schemas.get(raw["operation"])
+        if schema is None:
+            continue
+        try:
+            return parse_input(block, schema)
+        except (ValueError, TypeError):
+            continue
+
+    raise ValueError(
+        "No valid operation config found in prompt. "
+        f"Known operations: {list(schemas.keys())}. "
+        f"Prompt starts with: {prompt[:200]}"
+    )

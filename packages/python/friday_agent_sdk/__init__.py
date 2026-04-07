@@ -1,7 +1,7 @@
 # friday-agent-sdk: Python SDK for authoring Friday WASM agents
 
 from friday_agent_sdk._decorator import agent
-from friday_agent_sdk._parse import parse_input
+from friday_agent_sdk._parse import parse_input, parse_operation
 from friday_agent_sdk._result import (
     AgentExtras,
     AgentResult,
@@ -25,6 +25,7 @@ from friday_agent_sdk._types import (
 __all__ = [
     "agent",
     "parse_input",
+    "parse_operation",
     "ok",
     "err",
     "OkResult",

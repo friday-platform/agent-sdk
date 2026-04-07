@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from friday_agent_sdk import agent, err, ok, parse_input
+from friday_agent_sdk import agent, err, ok, parse_operation
 from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
 from friday_agent_sdk._result import ErrResult, OkResult
 
@@ -925,17 +925,15 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
 def execute(prompt: str, ctx) -> OkResult | ErrResult:
     """Parse operation from prompt and dispatch to handler.
 
-    Two-pass parsing: first extracts raw dict to read the operation
-    discriminator, then re-parses with the typed dataclass schema.
+    Single-pass parsing: filters to JSON objects containing "operation",
+    uses the discriminator to select the right schema, validates in one step.
     """
-    raw = parse_input(prompt)
-    operation = raw.get("operation")
+    try:
+        config = parse_operation(prompt, _OPERATION_SCHEMAS)
+    except ValueError as e:
+        return err(str(e))
 
-    schema = _OPERATION_SCHEMAS.get(operation)
-    if schema is None:
-        return err(f"Unknown operation: {operation}")
-
-    config = parse_input(prompt, schema)
+    operation = config.operation
 
     match operation:
         case "pr-view":
