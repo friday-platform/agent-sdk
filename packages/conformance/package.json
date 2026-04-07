@@ -4,6 +4,9 @@
   "private": true,
   "description": "Conformance tests validating compiled WASM agents against the friday:agent contract",
   "type": "module",
+  "scripts": {
+    "test": "vp test"
+  },
   "devDependencies": {
     "ajv": "^8.17.1",
     "vite-plus": "catalog:"
