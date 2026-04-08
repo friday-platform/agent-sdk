@@ -31,3 +31,8 @@ __pycache__/
 
 # AI agent worktrees
 .claude/worktrees/
+
+# Compiled agent artifacts (built on-demand)
+packages/python/examples/*/agent.wasm
+packages/python/examples/*/agent-js/
+packages/python/examples/*/node_modules/

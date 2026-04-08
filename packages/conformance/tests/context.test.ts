@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Ajv } from "ajv";
-import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { agent } from "../../python/examples/context-inspector/agent-js/agent.js";
-import { reset } from "../stubs/capabilities-stub.js";
+import { beforeAll, beforeEach, describe, expect, it } from "vite-plus/test";
+import { loadAgent, type LoadedAgent } from "../build/loader.ts";
 
 const schemaPath = resolve(import.meta.dirname, "../schemas/context.schema.json");
 const contextSchema = JSON.parse(readFileSync(schemaPath, "utf-8"));
@@ -11,20 +10,29 @@ const contextSchema = JSON.parse(readFileSync(schemaPath, "utf-8"));
 const ajv = new Ajv();
 const validate = ajv.compile(contextSchema);
 
-/**
- * Calls context-inspector's execute() and parses the result.
- * The agent returns all context fields as JSON in its ok payload.
- */
-async function executeWithContext(context: Record<string, unknown>) {
-  const result = await agent.execute("test prompt", JSON.stringify(context));
-  expect(result.tag).toBe("ok");
-  return JSON.parse(result.val);
-}
-
 describe("context round-trip conformance", () => {
-  beforeEach(() => {
-    reset();
+  let agent: LoadedAgent;
+
+  beforeAll(async () => {
+    agent = await loadAgent("context-inspector");
   });
+
+  beforeEach(() => {
+    agent.stub.reset();
+  });
+
+  /**
+   * Calls context-inspector's execute() and parses the result.
+   * The agent returns all context fields as a JSON string in its ok payload,
+   * which the bridge wraps in {"data": ...}, so we need to parse twice.
+   */
+  async function executeWithContext(context: Record<string, unknown>) {
+    const result = await agent.agent.execute("test prompt", JSON.stringify(context));
+    expect(result.tag).toBe("ok");
+    const outer = JSON.parse(result.val);
+    // The agent json.dumps() its result, so data is a string that needs second parsing
+    return JSON.parse(outer.data);
+  }
 
   describe("env", () => {
     it("round-trips env as Record<string, string>", async () => {
@@ -39,7 +47,10 @@ describe("context round-trip conformance", () => {
     });
 
     it("preserves special characters in env values", async () => {
-      const env = { SPECIAL: "hello=world&foo=bar", UNICODE: "\u00e9\u00e8\u00ea" };
+      const env = {
+        SPECIAL: "hello=world&foo=bar",
+        UNICODE: "\u00e9\u00e8\u00ea",
+      };
       const result = await executeWithContext({ env, config: {} });
       expect(result.env).toEqual(env);
     });
@@ -100,7 +111,11 @@ describe("context round-trip conformance", () => {
     });
 
     it("passes null session explicitly", async () => {
-      const result = await executeWithContext({ env: {}, config: {}, session: null });
+      const result = await executeWithContext({
+        env: {},
+        config: {},
+        session: null,
+      });
       expect(result.session).toBeNull();
     });
   });

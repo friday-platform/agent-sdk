@@ -5,7 +5,8 @@
   "description": "Conformance tests validating compiled WASM agents against the friday:agent contract",
   "type": "module",
   "scripts": {
-    "test": "vp test"
+    "test": "vp test",
+    "build:agents": "node --experimental-wasm-jspi --import tsx build/cli.ts"
   },
   "devDependencies": {
     "ajv": "^8.17.1",

@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Ajv } from "ajv";
-import { beforeEach, describe, expect, it } from "vite-plus/test";
-import { agent } from "../../python/examples/llm-http-agent/agent-js/agent.js";
-import { httpCalls, llmCalls, logCalls, reset } from "../stubs/capabilities-stub.js";
+import { beforeAll, beforeEach, describe, expect, it } from "vite-plus/test";
+import { loadAgent, type LoadedAgent } from "../build/loader.ts";
 
 const contextJson = JSON.stringify({ env: {}, config: {} });
 
@@ -20,28 +19,38 @@ const validateHttpRequest = loadSchema("http-request.schema.json");
 const validateHttpResponse = loadSchema("http-response.schema.json");
 
 describe("LLM capabilities conformance", () => {
+  let agent: LoadedAgent;
+
+  beforeAll(async () => {
+    agent = await loadAgent("llm-http-agent");
+  });
+
   beforeEach(() => {
-    reset();
+    agent.stub.reset();
   });
 
   describe("request serialization", () => {
     it("sends model and messages through the WIT boundary", async () => {
-      await agent.execute("llm:hello", contextJson);
+      await agent.agent.execute("llm:hello", contextJson);
 
-      expect(llmCalls).toHaveLength(1);
-      const req = llmCalls[0] as Record<string, unknown>;
+      expect(agent.stub.llmCalls).toHaveLength(1);
+      const req = agent.stub.llmCalls[0] as Record<string, unknown>;
       expect(req.model).toBe("test-model");
       expect(req.messages).toEqual([{ role: "user", content: "hello" }]);
     });
 
     it("request conforms to llm-request schema", async () => {
-      await agent.execute("llm:test", contextJson);
+      await agent.agent.execute("llm:test", contextJson);
 
-      const req = llmCalls[0];
+      const req = agent.stub.llmCalls[0];
       const valid = validateLlmRequest(req);
       if (!valid) {
         expect.fail(
-          `LLM request schema validation failed:\n${JSON.stringify(validateLlmRequest.errors, null, 2)}`,
+          `LLM request schema validation failed:\\n${JSON.stringify(
+            validateLlmRequest.errors,
+            null,
+            2,
+          )}`,
         );
       }
     });
@@ -57,13 +66,13 @@ describe("LLM capabilities conformance", () => {
 
   describe("response parsing", () => {
     it("text response flows back through WIT to agent", async () => {
-      const result = await agent.execute("llm:hello", contextJson);
+      const result = await agent.agent.execute("llm:hello", contextJson);
 
       expect(result.tag).toBe("ok");
       const parsed = JSON.parse(result.val);
-      expect(parsed.llm_result.text).toBe("mock response");
-      expect(parsed.llm_result.model).toBe("test-model");
-      expect(parsed.llm_result.finish_reason).toBe("stop");
+      expect(parsed.data.llm_result.text).toBe("mock response");
+      expect(parsed.data.llm_result.model).toBe("test-model");
+      expect(parsed.data.llm_result.finish_reason).toBe("stop");
     });
 
     it("stub response conforms to llm-response schema", async () => {
@@ -78,7 +87,11 @@ describe("LLM capabilities conformance", () => {
       const valid = validateLlmResponse(stubResponse);
       if (!valid) {
         expect.fail(
-          `LLM response schema validation failed:\n${JSON.stringify(validateLlmResponse.errors, null, 2)}`,
+          `LLM response schema validation failed:\\n${JSON.stringify(
+            validateLlmResponse.errors,
+            null,
+            2,
+          )}`,
         );
       }
     });
@@ -95,7 +108,7 @@ describe("LLM capabilities conformance", () => {
 
   describe("error path", () => {
     it("host throw propagates as err variant", async () => {
-      const result = await agent.execute("llm-fail:something", contextJson);
+      const result = await agent.agent.execute("llm-fail:something", contextJson);
 
       expect(result.tag).toBe("err");
       expect(result.val).toBe("llm-unavailable");
@@ -114,12 +127,15 @@ describe("LLM capabilities conformance", () => {
       const req = {
         messages: [{ role: "user", content: "test" }],
         model: "test-model",
-        provider_options: { custom_key: "custom_value", nested: { a: 1 } },
+        provider_options: {
+          custom_key: "custom_value",
+          nested: { a: 1 },
+        },
       };
       const valid = validateLlmRequest(req);
       if (!valid) {
         expect.fail(
-          `Schema validation failed:\n${JSON.stringify(validateLlmRequest.errors, null, 2)}`,
+          `Schema validation failed:\\n${JSON.stringify(validateLlmRequest.errors, null, 2)}`,
         );
       }
     });
@@ -127,49 +143,59 @@ describe("LLM capabilities conformance", () => {
 });
 
 describe("HTTP capabilities conformance", () => {
+  let agent: LoadedAgent;
+
+  beforeAll(async () => {
+    agent = await loadAgent("llm-http-agent");
+  });
+
   beforeEach(() => {
-    reset();
+    agent.stub.reset();
   });
 
   describe("request serialization", () => {
     it("sends url and method through the WIT boundary", async () => {
-      await agent.execute("http:test-path", contextJson);
+      await agent.agent.execute("http:test-path", contextJson);
 
-      expect(httpCalls).toHaveLength(1);
-      const req = httpCalls[0] as Record<string, unknown>;
+      expect(agent.stub.httpCalls).toHaveLength(1);
+      const req = agent.stub.httpCalls[0] as Record<string, unknown>;
       expect(req.url).toBe("https://example.com/test-path");
       expect(req.method).toBe("GET");
     });
 
     it("request conforms to http-request schema", async () => {
-      await agent.execute("http:api/data", contextJson);
+      await agent.agent.execute("http:api/data", contextJson);
 
-      const req = httpCalls[0];
+      const req = agent.stub.httpCalls[0];
       const valid = validateHttpRequest(req);
       if (!valid) {
         expect.fail(
-          `HTTP request schema validation failed:\n${JSON.stringify(validateHttpRequest.errors, null, 2)}`,
+          `HTTP request schema validation failed:\\n${JSON.stringify(
+            validateHttpRequest.errors,
+            null,
+            2,
+          )}`,
         );
       }
     });
 
     it("method defaults to GET", async () => {
       // The Python SDK defaults method to "GET"
-      await agent.execute("http:test", contextJson);
+      await agent.agent.execute("http:test", contextJson);
 
-      const req = httpCalls[0] as Record<string, unknown>;
+      const req = agent.stub.httpCalls[0] as Record<string, unknown>;
       expect(req.method).toBe("GET");
     });
   });
 
   describe("response parsing", () => {
     it("status and body flow back through WIT to agent", async () => {
-      const result = await agent.execute("http:test", contextJson);
+      const result = await agent.agent.execute("http:test", contextJson);
 
       expect(result.tag).toBe("ok");
       const parsed = JSON.parse(result.val);
-      expect(parsed.http_result.status).toBe(200);
-      expect(JSON.parse(parsed.http_result.body)).toEqual({
+      expect(parsed.data.http_result.status).toBe(200);
+      expect(JSON.parse(parsed.data.http_result.body)).toEqual({
         ok: true,
         url: "https://example.com/test",
       });
@@ -184,7 +210,11 @@ describe("HTTP capabilities conformance", () => {
       const valid = validateHttpResponse(stubResponse);
       if (!valid) {
         expect.fail(
-          `HTTP response schema validation failed:\n${JSON.stringify(validateHttpResponse.errors, null, 2)}`,
+          `HTTP response schema validation failed:\\n${JSON.stringify(
+            validateHttpResponse.errors,
+            null,
+            2,
+          )}`,
         );
       }
     });
@@ -192,7 +222,7 @@ describe("HTTP capabilities conformance", () => {
 
   describe("error path", () => {
     it("host throw propagates as err variant", async () => {
-      const result = await agent.execute("http-fail:something", contextJson);
+      const result = await agent.agent.execute("http-fail:something", contextJson);
 
       expect(result.tag).toBe("err");
       expect(result.val).toBe("connection-refused");
@@ -212,14 +242,17 @@ describe("HTTP capabilities conformance", () => {
       const req = {
         url: "https://example.com/api",
         method: "POST",
-        headers: { "content-type": "application/json", authorization: "Bearer token" },
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer token",
+        },
         body: '{"key":"value"}',
         timeout_ms: 5000,
       };
       const valid = validateHttpRequest(req);
       if (!valid) {
         expect.fail(
-          `Schema validation failed:\n${JSON.stringify(validateHttpRequest.errors, null, 2)}`,
+          `Schema validation failed:\\n${JSON.stringify(validateHttpRequest.errors, null, 2)}`,
         );
       }
     });
@@ -227,14 +260,20 @@ describe("HTTP capabilities conformance", () => {
 });
 
 describe("logging from capabilities agent", () => {
+  let agent: LoadedAgent;
+
+  beforeAll(async () => {
+    agent = await loadAgent("llm-http-agent");
+  });
+
   beforeEach(() => {
-    reset();
+    agent.stub.reset();
   });
 
   it("log calls from agent reach the host", async () => {
-    await agent.execute("llm:hello", contextJson);
+    await agent.agent.execute("llm:hello", contextJson);
 
-    expect(logCalls.length).toBeGreaterThan(0);
-    expect(logCalls[0]?.message).toContain("llm-http-agent executing: llm:hello");
+    expect(agent.stub.logCalls.length).toBeGreaterThan(0);
+    expect(agent.stub.logCalls[0]?.message).toContain("llm-http-agent executing: llm:hello");
   });
 });
