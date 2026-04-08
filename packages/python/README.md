@@ -4,13 +4,28 @@ Write AI agents in Python that run inside Friday's WebAssembly sandbox.
 
 ## Prerequisites
 
-- Python 3.11+
-- [Friday CLI](https://github.com/atlas-ai/friday) installed and configured
-- Docker (the build pipeline runs inside a container)
+- [Docker](https://docs.docker.com/get-docker/) with Compose
+- An Anthropic API key (or another supported LLM provider)
+
+> **Optional:** Python 3.11+ locally gives your editor autocomplete and type
+> checking for the SDK. The build runs inside Docker — you do not need Python on
+> your machine.
 
 ## Quickstart
 
-Create a file named `agent.py`:
+Add your API key to `.env` next to your `docker-compose.yml`:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Create an agent in the `agents/` directory:
+
+```bash
+mkdir -p agents/my-analyser
+```
+
+Write `agents/my-analyser/agent.py`:
 
 ```python
 from friday_agent_sdk import agent, ok, AgentContext
@@ -30,32 +45,20 @@ def execute(prompt: str, ctx: AgentContext):
     return ok({"summary": result.text})
 ```
 
-Build the agent:
+Start (or restart) the platform to build your agent:
 
 ```bash
-# The build runs in Docker via the Friday daemon
-atlas agent build ./agent.py
+docker compose up -d
+# or, if already running:
+docker compose restart platform
 ```
 
-Or use the HTTP API directly:
+Test it:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/agents/build \
-  -F "files=@agent.py" | jq .
-```
-
-Add to your `workspace.yml`:
-
-```yaml
-agents:
-  - id: my-analyser
-    type: user
-```
-
-Test it in Friday's web UI or via CLI:
-
-```bash
-atlas prompt "my-analyser: Analyse this codebase for bugs"
+curl -s -X POST http://localhost:15200/api/execute \
+  -H 'Content-Type: application/json' \
+  -d '{"agentId": "my-analyser", "input": "Summarise this codebase"}' | jq .
 ```
 
 ## Documentation
@@ -132,23 +135,29 @@ The `@agent` decorator and SDK bridge handle this for you. See the [WIT file](..
 If your agent file is not named `agent.py`, specify the entry point via the API:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/agents/build \
+curl -s -X POST http://localhost:18080/api/agents/build \
   -F "files=@main.py;filename=main.py" \
   -F "entry_point=main" \
   | jq .
 ```
 
-### Docker Compose Ports
+### Docker Compose Details
 
-When Friday runs via docker-compose, services use different host ports:
+The quickstart above covers the standard flow. Additional details:
+
+To use a different agent source directory, set `AGENTS_DIR` in your `.env`:
+
+```env
+AGENTS_DIR=./my-agents
+```
+
+Host port mappings:
 
 | Service       | Host Port | Container Port |
 | ------------- | --------- | -------------- |
 | Daemon API    | `18080`   | `8080`         |
 | Playground UI | `15200`   | `5200`         |
 | Link (auth)   | `13100`   | `3100`         |
-
-### Agent Persistence
 
 Built agents survive container restarts. To start fresh:
 
@@ -166,16 +175,12 @@ docker compose down -v && docker compose up -d
 ## Troubleshooting
 
 **Build fails with "componentize-py not found"**
-The build runs inside the Friday daemon's Docker container. Ensure your daemon is running: `atlas daemon status`
+The build runs inside the platform container. Verify it is running:
+`docker compose ps platform`
 
 **Agent not appearing after build**
-Agents should be immediately discoverable at `GET /api/agents`. If not, trigger a rescan:
-
-```bash
-curl -X POST http://localhost:8080/api/agents/reload
-```
-
-When running via docker-compose, use port `18080` for the daemon API.
+Check the build logs: `docker compose logs platform | grep -i "built agent"`.
+Agents are discoverable at `GET http://localhost:18080/api/agents`.
 
 **Build returns 400 error**
 The build API returns HTTP 400 for user errors with a specific phase:

@@ -2,6 +2,8 @@
 
 Persist outputs in Friday's artifact system and add structured references to the conversation outline.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## Basic Success Result
 
 Use `ok()` to return structured data:

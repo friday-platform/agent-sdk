@@ -1,10 +1,12 @@
 # Your First Friday Agent
 
-This tutorial takes you from an empty directory to a running agent that uses an LLM to analyse text. By the end you will have built, registered, and tested an agent in Friday.
+Build a text analysis agent, from an empty directory to a running result. By the
+end you will have built and tested an agent inside Friday's Docker environment.
 
 ## What You Will Build
 
-A text analysis agent that accepts a topic and returns a structured analysis with a summary, key points, and a sentiment rating. It demonstrates:
+A text analysis agent that accepts a topic and returns a structured analysis
+with a summary, key points, and a sentiment rating. It demonstrates:
 
 - The `@agent` decorator for metadata
 - Calling an LLM through `ctx.llm.generate_object()` for structured output
@@ -12,28 +14,57 @@ A text analysis agent that accepts a topic and returns a structured analysis wit
 
 ## Prerequisites
 
-- Python 3.11+ installed locally (for IDE support)
-- Friday CLI installed: see [Friday installation guide](https://github.com/atlas-ai/friday#installation)
-- Friday daemon running (the build pipeline uses Docker internally)
-- A Friday workspace with an Anthropic API key connected
+- [Docker](https://docs.docker.com/get-docker/) with Compose
+- A text editor
+- An Anthropic API key
 
-Verify your setup:
+> **Tip:** Installing Python 3.11+ locally gives your editor autocomplete and
+> type checking for the SDK. The build itself runs inside Docker — you do not
+> need Python on your machine.
 
-```bash
-atlas daemon status  # should show "running"
-atlas link list      # should show "anthropic" connected
+## Step 1: Start the Platform
+
+Create a `.env` file next to your `docker-compose.yml`:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-## Step 1: Create the Agent File
-
-Create a new directory and a file named `agent.py`:
+Start Friday:
 
 ```bash
-mkdir ~/my-first-agent
-cd ~/my-first-agent
+docker compose up -d
 ```
 
-Open `agent.py` in your editor and add:
+Wait for the startup banner in the logs:
+
+```bash
+docker compose logs -f platform
+```
+
+```
+================================================================
+  Friday Platform is ready!
+
+  Friday Studio:       http://localhost:15200
+  Daemon API:          http://localhost:18080
+================================================================
+```
+
+Press `Ctrl-C` to stop tailing. The platform keeps running in the background.
+
+## Step 2: Create the Agent File
+
+Friday watches the `agents/` directory next to your `docker-compose.yml`. Each
+subdirectory becomes an agent.
+
+Create the directory and open `agent.py` in your editor:
+
+```bash
+mkdir -p agents/text-analyser
+```
+
+Write `agents/text-analyser/agent.py`:
 
 ```python
 from dataclasses import dataclass
@@ -71,6 +102,7 @@ def execute(prompt: str, ctx: AgentContext):
             },
         },
         "required": ["summary", "key_points", "sentiment"],
+        "additionalProperties": False,
     }
 
     # Call the host's LLM — your agent never sees the API key
@@ -91,45 +123,42 @@ Provide a concise summary, 3-5 key points, and an overall sentiment."""
     return ok(result.object)
 ```
 
-Notice what is happening here:
+Three things to notice:
 
-- The `@agent` decorator registers your function with metadata Friday uses for discovery
-- `ctx.llm.generate_object()` sends a request to the host's LLM registry — you specify the model and schema, Friday handles the API key and provider routing
-- `ok()` wraps your structured data in the result format Friday expects
+- The `@agent` decorator registers your function with metadata Friday uses for
+  discovery.
+- `ctx.llm.generate_object()` sends a request to the host's LLM registry — you
+  specify the model and schema, Friday handles the API key and provider routing.
+- `ok()` wraps your structured data in the result format Friday expects.
 
-## Step 2: Build the Agent
+## Step 3: Build and Test
 
-The build pipeline compiles your Python to WASM using `componentize-py`, then transpiles to JavaScript with `jco`. This happens inside the Friday daemon's Docker container.
-
-From the same directory as `agent.py`:
-
-```bash
-atlas agent build ./agent.py
-```
-
-You will see output showing the build steps. This stores your agent in Friday's internal registry.
-
-## Step 3: Register in Your Workspace
-
-Open your workspace's `workspace.yml` (usually in `~/.atlas/workspaces/<name>/` or your project directory). Add the agent:
-
-```yaml
-agents:
-  - id: text-analyser
-    type: user
-```
-
-The `user:` prefix is added automatically — you specify `text-analyser`, Friday resolves it to `user:text-analyser`.
-
-## Step 4: Test the Agent
-
-Start Friday's web UI (or use the CLI):
+Restart the platform to build your agent:
 
 ```bash
-atlas prompt "text-analyser: The new feature shipped on time and customers are reporting significantly faster load times. Support tickets are down 40%."
+docker compose restart platform
 ```
 
-You will see Friday's planner delegate to your agent, and after a moment:
+The daemon compiles every agent in `agents/` on startup. Verify the build
+succeeded:
+
+```bash
+docker compose logs platform | grep -i "built agent"
+# Built agent text-analyser@1.0.0 from source
+```
+
+Test your agent with curl against the playground API on port `15200`:
+
+```bash
+curl -s -X POST http://localhost:15200/api/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "agentId": "text-analyser",
+    "input": "The new feature shipped on time and customers report faster load times. Support tickets are down 40%."
+  }' | jq .
+```
+
+The response streams as SSE events. After a moment you see the result:
 
 ```json
 {
@@ -146,20 +175,46 @@ You will see Friday's planner delegate to your agent, and after a moment:
 Try a different input:
 
 ```bash
-atlas prompt "text-analyser: The server crashed twice today. The database is throwing connection errors and the logs are incomprehensible."
+curl -s -X POST http://localhost:15200/api/execute \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "agentId": "text-analyser",
+    "input": "The server crashed twice today. The database is throwing connection errors and the logs are incomprehensible."
+  }' | jq .
 ```
 
-Notice your agent automatically classifies this as `"sentiment": "negative"`.
+Your agent classifies this as `"sentiment": "negative"`.
 
-## Step 5: Iterate
+> **Prefer the CLI?** The `atlas` CLI is available inside the container. You can
+> also test from the host if you have the CLI installed:
+>
+> ```bash
+> # From the host
+> atlas agent exec text-analyser \
+>   -i "analyse this text" \
+>   --url http://localhost:15200
+>
+> # Or from inside the container
+> docker compose exec platform atlas agent exec text-analyser \
+>   -i "analyse this text"
+> ```
+>
+> Add `--json` for raw NDJSON output (useful for piping to `jq`).
 
-Edit `agent.py` to change the model or adjust the schema. After each edit:
+## Step 4: Iterate
+
+Edit `agents/text-analyser/agent.py`, then rebuild and test:
 
 ```bash
-atlas agent build ./agent.py
+docker compose restart platform
+curl -s -X POST http://localhost:15200/api/execute \
+  -H 'Content-Type: application/json' \
+  -d '{"agentId": "text-analyser", "input": "test your changes"}' | jq .
 ```
 
-The new build immediately replaces the previous version in the agent registry. Friday uses semantic versioning: rebuild with a higher version to keep old versions available for rollback.
+This cycle — edit, restart, test — is your development loop.
+
+Bump the version to keep old builds available for rollback:
 
 ```python
 @agent(
@@ -169,17 +224,34 @@ The new build immediately replaces the previous version in the agent registry. F
 )
 ```
 
-Both versions are stored, but Friday resolves `text-analyser` to the latest semver version (`1.0.1`).
+Both versions are stored, but Friday resolves `text-analyser` to the latest
+semver version (`1.0.1`).
 
-Test again. This cycle — edit, build, test — is your development loop.
+## Step 5: Register in a Workspace (Optional)
+
+To use your agent within a Friday workspace (for planner routing, signals, and
+multi-agent orchestration), add it to your workspace's `workspace.yml`:
+
+```yaml
+agents:
+  - id: text-analyser
+    type: user
+```
+
+Friday adds the `user:` prefix automatically — you specify `text-analyser`,
+Friday resolves it to `user:text-analyser`. This step is not required for direct
+execution.
 
 ## What You Have Learned
 
 - The `@agent` decorator registers metadata Friday uses for discovery
-- `ctx.llm.generate()` and `ctx.llm.generate_object()` route through the host's provider registry
+- `ctx.llm.generate()` and `ctx.llm.generate_object()` route through the host's
+  provider registry
 - `ok()` returns structured data; `err()` returns error messages
-- The build pipeline runs in Docker via the Friday daemon
-- `type: user` in `workspace.yml` activates your agent
+- The build pipeline compiles Python to WASM inside Docker
+- Agents in `agents/` build automatically on platform startup
+- Adding `type: user` to `workspace.yml` integrates your agent into a workspace
+  for planner routing
 
 ## Next Steps
 
@@ -188,7 +260,8 @@ Test again. This cycle — edit, build, test — is your development loop.
 - [Use MCP tools like GitHub or databases](../how-to/use-mcp-tools.md)
 - [Stream progress updates during long operations](../how-to/stream-progress.md)
 - [Handle structured input from Friday's planner](../how-to/handle-structured-input.md)
-- Read [How Friday Agents Work](../explanation/how-agents-work.md) to understand the WASM sandbox and host capabilities architecture
+- Read [How Friday Agents Work](../explanation/how-agents-work.md) to understand
+  the WASM sandbox and host capabilities architecture
 
 ---
 
@@ -196,15 +269,17 @@ Test again. This cycle — edit, build, test — is your development loop.
 
 ### Using the HTTP API Directly
 
-For CI/CD pipelines or automation:
+For CI/CD pipelines or automation, build agents via the daemon API on port
+`18080`:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/agents/build \
+curl -s -X POST http://localhost:18080/api/agents/build \
   -F "files=@agent.py" \
   | jq .
 ```
 
-Error responses include the phase that failed (`compile`, `transpile`, `validate`, or `write`):
+Error responses include the phase that failed (`compile`, `transpile`,
+`validate`, or `write`):
 
 ```json
 {
@@ -214,34 +289,56 @@ Error responses include the phase that failed (`compile`, `transpile`, `validate
 }
 ```
 
-### Running with Docker Compose
+### Local Development (Without Docker)
 
-When Friday runs via docker-compose, the daemon is at port `18080` instead of `8080`:
+If you run the Friday daemon directly on your machine (e.g. as a contributor),
+the CLI commands work without the Docker layer:
 
 ```bash
-curl -s -X POST http://localhost:18080/api/agents/build -F "files=@agent.py"
+atlas daemon status        # verify the daemon is running
+atlas link list            # verify credentials are connected
+atlas agent build ./agent.py
+atlas agent exec text-analyser -i "test input"
+```
+
+The daemon listens on port `8080` locally (not `18080`). See the
+[Friday CLI documentation](https://github.com/atlas-ai/friday) for setup.
+
+### Customising the Agent Directory
+
+By default, Friday watches `./agents/` next to your `docker-compose.yml`. To
+use a different directory, set `AGENTS_DIR` in your `.env`:
+
+```env
+AGENTS_DIR=./my-agents
 ```
 
 ### Troubleshooting
 
-**"anthropic not connected"**
-Connect your Anthropic API key in Friday: `atlas link add anthropic`
-
-**"agent not found"**
-Check the build output — verify the agent ID matches what you registered in `workspace.yml`. If using docker-compose, the daemon is at port `18080`.
+**Agent not found after restart**
+Check the build logs: `docker compose logs platform | grep -i "built agent"`.
+Verify the agent ID matches what you pass to the execute API.
 
 **Build fails with syntax errors**
-The SDK uses pure Python dataclasses — no Pydantic. Ensure your type hints are standard library only.
+The SDK uses pure Python dataclasses — no Pydantic. Ensure your type hints use
+standard library types only.
 
 **Build returns 400**
-Your `@agent` decorator metadata failed validation. Required fields: `id`, `version`, `description`.
+Your `@agent` decorator metadata failed validation. Required fields: `id`,
+`version`, `description`.
 
 **"componentize-py" errors about imports**
-Only the Python standard library is available inside the WASM sandbox. You cannot `import requests` or `import openai`. Use `ctx.http` and `ctx.llm` instead.
+Only the Python standard library is available inside the WASM sandbox. You
+cannot `import requests` or `import openai`. Use `ctx.http` and `ctx.llm`
+instead.
+
+**Credentials not working**
+Verify your `.env` file contains `ANTHROPIC_API_KEY` and restart the platform:
+`docker compose restart platform`.
 
 ## The Complete Code
 
-Your final `agent.py`:
+Your final `agents/text-analyser/agent.py`:
 
 ```python
 from dataclasses import dataclass
@@ -276,6 +373,7 @@ def execute(prompt: str, ctx: AgentContext):
             },
         },
         "required": ["summary", "key_points", "sentiment"],
+        "additionalProperties": False,
     }
 
     analysis_prompt = f"""Analyse the following text.
@@ -293,5 +391,3 @@ Provide a concise summary, 3-5 key points, and an overall sentiment."""
 
     return ok(result.object)
 ```
-
-Congratulations — you have built your first Friday agent.

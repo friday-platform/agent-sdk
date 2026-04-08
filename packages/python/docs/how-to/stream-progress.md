@@ -2,6 +2,8 @@
 
 Emit progress events that appear in Friday's UI during long-running operations.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## Basic Progress Emission
 
 ```python

@@ -2,6 +2,8 @@
 
 Make outbound HTTP requests through Friday's fetch layer — TLS, timeouts, and audit logging handled by the host.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## Basic GET Request
 
 ```python

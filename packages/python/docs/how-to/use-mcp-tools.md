@@ -2,6 +2,8 @@
 
 Configure MCP servers in your agent decorator and call tools via `ctx.tools`.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## Configure an MCP Server
 
 Declare required MCP servers in the `@agent` decorator:

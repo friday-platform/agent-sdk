@@ -71,16 +71,23 @@ This means:
 
 ## Iteration Workflow
 
+With the Friday CLI:
+
 ```bash
-# Edit your agent
 vim agent.py
-
-# Build
 atlas agent build ./agent.py
-
-# Test
-atlas prompt "my-agent: test input"
+atlas agent exec my-agent -i "test input"
 ```
+
+With Docker Compose, place your source in `agents/` and restart:
+
+```bash
+vim agents/my-agent/agent.py
+docker compose restart platform
+atlas agent exec my-agent -i "test input" --url http://localhost:15200
+```
+
+The daemon rebuilds every agent in `agents/` on startup.
 
 Friday resolves agent IDs to the latest semver version automatically. Rebuild with a bumped version (`1.0.1`) to keep old iterations available.
 

@@ -2,6 +2,8 @@
 
 Extract JSON configurations from Friday's enriched prompts using `parse_input()` and `parse_operation()`.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## The Problem
 
 Friday sends your agent an "enriched prompt" — a markdown string containing:

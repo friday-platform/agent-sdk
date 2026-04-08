@@ -2,6 +2,8 @@
 
 Route LLM calls through Friday's provider registry instead of importing API clients directly.
 
+> **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
+
 ## Basic Generation
 
 Use `ctx.llm.generate()` for text completion:
