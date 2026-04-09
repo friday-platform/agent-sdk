@@ -40,13 +40,12 @@ def execute(prompt, ctx):
 
 
 def _handle_discover(ctx):
-    """List all available tools."""
+    # MCP tool discovery — introspects what mcp-server-time provides
     tools = ctx.tools.list()
     return ok({"tools": [t.name for t in tools], "count": len(tools)})
 
 
 def _handle_now(ctx):
-    """Get current time in UTC."""
     result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
     return ok({"time_result": result})
 
@@ -69,7 +68,7 @@ def _handle_convert(prompt, ctx):
 
 
 def _handle_combo(ctx):
-    """Get current time then convert UTC to America/New_York."""
+    # Sequential tool calls verify ctx.tools state persists across invocations
     time_result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
     convert_result = ctx.tools.call(
         "convert_time",
@@ -92,7 +91,7 @@ def _handle_bad_tool(ctx):
 
 
 def _handle_bad_tool_then_now(ctx):
-    """Call bad tool (catch error), then call get_current_time successfully."""
+    # Error recovery pattern — failed tool call should not break subsequent calls
     try:
         ctx.tools.call("nonexistent_tool", {})
         return err("expected ToolCallError but got success")

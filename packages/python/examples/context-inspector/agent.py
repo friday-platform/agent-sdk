@@ -1,8 +1,8 @@
 """Context inspector agent — returns all context fields for E2E verification.
 
-Serializes every field from AgentContext so tests can assert that env,
-config, session, output_schema, and tools all survive the host-to-WASM
-round trip.
+Serializes every field from AgentContext to JSON to verify the host-to-WASM
+serialization round-trip. Tests assert that env, config, session, 
+output_schema, and tools all survive the boundary crossing intact.
 """
 
 import json

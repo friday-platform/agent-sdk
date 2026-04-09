@@ -78,6 +78,7 @@ def _select_model(effort: str) -> tuple[str, str]:
 
 
 def _build_system_append(skills: list[dict] | None) -> str:
+    """Append skill-loading instructions to system prompt when workspace skills configured."""
     if not skills:
         return _SYSTEM_APPEND_BASE
     names = ", ".join(f'"{s["name"]}"' for s in skills)
@@ -116,7 +117,11 @@ def _parse_structured_output(text: str) -> dict | None:
 
 
 def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
-    """Create a platform artifact to persist the output. Returns ref or None."""
+    """Create a platform artifact to persist the output. Returns ref or None.
+
+    Best-effort: network failures, auth errors, or invalid config are silently
+    ignored — artifact storage should not fail the agent execution.
+    """
     try:
         response = ctx.http.fetch(
             f"{ctx.config.get('platformUrl', 'http://localhost:8080')}/api/artifacts",
@@ -198,7 +203,7 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
     use_workspace_skills=True,
 )
 def execute(prompt: str, ctx) -> OkResult | ErrResult:
-    # --- Validate required env ---
+    # --- Verify Anthropic API key is configured ---
     api_key = ctx.env.get("ANTHROPIC_API_KEY")
     if not api_key:
         return err("ANTHROPIC_API_KEY not set. Connect Anthropic in Link.")
@@ -208,7 +213,8 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
         if ctx.stream:
             ctx.stream.progress(msg, tool_name="Claude Code")
 
-    # --- Phase 1: Pre-processing (extract repo/task/effort with Haiku) ---
+    # --- Phase 1: Pre-processing ---
+    # Haiku used for extraction — fast, cheap, accurate enough for structured parsing
     _progress("Analyzing task")
     prep = None
     try:
@@ -223,14 +229,15 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
         )
         prep = result.object
     except Exception:
-        # Graceful degradation — use original prompt
+        # Extraction failure should not fail the request — use original prompt
         pass
 
     effective_prompt = prep["task"] if prep else prompt
     effort = prep["effort"] if prep else "medium"
     repo = prep.get("repo") if prep else None
 
-    # --- Phase 2: Model + fallback selection ---
+    # --- Phase 2: Select model by effort ---
+    # High effort → Opus (capable), Medium/Low → Sonnet (balanced), fallback to Haiku
     model, fallback_model = _select_model(effort)
 
     # --- Phase 3: Build provider options ---

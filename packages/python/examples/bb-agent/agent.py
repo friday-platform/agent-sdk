@@ -824,7 +824,7 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
     askpass_script = cred_env.pop("_askpass_script")
 
     try:
-        # Create the askpass script on disk
+        # ASKPASS_EOF prevents shell expansion of heredoc content
         _bash(
             ctx,
             f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
@@ -832,7 +832,6 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
             f"chmod 700 {askpass_path}",
         )
 
-        # Clone
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
         _bash(
             ctx,
@@ -882,7 +881,7 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
     askpass_script = cred_env.pop("_askpass_script")
 
     try:
-        # Create the askpass script on disk
+        # ASKPASS_EOF prevents shell expansion of heredoc content
         _bash(
             ctx,
             f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
@@ -890,7 +889,6 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
             f"chmod 700 {askpass_path}",
         )
 
-        # Push
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
         _bash(
             ctx,

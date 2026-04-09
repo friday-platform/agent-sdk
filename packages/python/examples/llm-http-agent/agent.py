@@ -18,7 +18,7 @@ def execute(prompt, ctx):
 
     log(1, f"llm-http-agent executing: {prompt}")
 
-    # Dispatch on prompt prefix
+    # Prompt prefix selects capability and success/error path to exercise
     if prompt.startswith("llm:"):
         return _handle_llm(prompt[4:], ctx)
     elif prompt.startswith("llm-fail:"):
@@ -32,7 +32,7 @@ def execute(prompt, ctx):
 
 
 def _handle_llm(user_msg, ctx):
-    """Success path: call ctx.llm.generate() and return the response."""
+    """LLM success path — model "test-model" expected to succeed."""
     response = ctx.llm.generate(
         messages=[{"role": "user", "content": user_msg}],
         model="test-model",
@@ -49,7 +49,7 @@ def _handle_llm(user_msg, ctx):
 
 
 def _handle_llm_fail(user_msg, ctx):
-    """Error path: trigger LLM error and verify it propagates."""
+    """LLM error path — model "fail-model" triggers LlmError."""
     try:
         ctx.llm.generate(
             messages=[{"role": "user", "content": user_msg}],
@@ -61,7 +61,7 @@ def _handle_llm_fail(user_msg, ctx):
 
 
 def _handle_http(path, ctx):
-    """Success path: call ctx.http.fetch() and return the response."""
+    """HTTP success path — example.com expected to resolve."""
     response = ctx.http.fetch(
         f"https://example.com/{path}",
         method="GET",
@@ -77,7 +77,7 @@ def _handle_http(path, ctx):
 
 
 def _handle_http_fail(path, ctx):
-    """Error path: trigger HTTP error and verify it propagates."""
+    """HTTP error path — fail.example.com triggers HttpError."""
     try:
         ctx.http.fetch(
             f"https://fail.example.com/{path}",

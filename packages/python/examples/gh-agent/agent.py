@@ -142,7 +142,8 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
     clone_url = f"https://github.com/{nwo}.git"
     clone_dir = f"/tmp/gh-clone-{uuid.uuid4()}"
 
-    # Clone using GH_TOKEN via credential env vars
+    # Clone using GH_TOKEN via GIT_ASKPASS to avoid token in URL (security)
+    # credential.helper env var provides token without touching disk
     clone_result = ctx.tools.call(
         "bash",
         {
@@ -187,7 +188,7 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
         stderr = checkout_result.get("stderr", "")
         return err(f"git checkout failed: {stderr}")
 
-    # Fetch changed files via API
+    # Fetch changed files via API — /files is paginated, may need follow-up calls
     files_resp = ctx.http.fetch(
         f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/files",
         headers={
@@ -339,7 +340,7 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
     """Fetch PR review comment threads via GitHub REST API.
 
     Gets all review comments, groups them into threads (root + replies).
-    Simplified from the TS version — returns all threads, not just bot-authored.
+    Ported from: packages/bundled-agents/src/gh/agent.ts
     """
     parts = _parse_pr_url(config.pr_url)
     owner, repo, pr_number = parts["owner"], parts["repo"], parts["pr_number"]
@@ -409,7 +410,11 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
 
 
 def _gh_headers(ctx) -> dict[str, str]:
-    """Build GitHub API request headers with Bearer auth."""
+    """Build GitHub API request headers with Bearer auth.
+
+    GitHub uses Bearer tokens (not Basic) for personal access tokens.
+    See: https://docs.github.com/en/rest/authentication/authenticating-to-the-rest-api
+    """
     gh_token = ctx.env.get("GH_TOKEN", "")
     return {
         "Accept": "application/vnd.github.v3+json",
@@ -422,7 +427,7 @@ def _gh_headers(ctx) -> dict[str, str]:
 def _build_comment_body(finding: dict) -> str:
     """Build markdown body for an inline PR comment from a finding.
 
-    Matches buildCommentBody from packages/bundled-agents/src/vcs/schemas.ts.
+    Keep in sync with: packages/bundled-agents/src/vcs/schemas.ts
     """
     parts = [
         f"**{finding['severity']}** — {finding['title']}",
@@ -442,7 +447,10 @@ def _build_failed_findings_summary(
     failed: list[dict],
     findings: list[dict],
 ) -> list[str]:
-    """Build summary sections for findings that failed to post inline."""
+    """Build summary sections for findings that failed to post inline.
+
+    Keep in sync with: packages/bundled-agents/src/vcs/schemas.ts
+    """
     parts: list[str] = []
     for f in failed:
         finding = next(
@@ -482,7 +490,11 @@ def _post_inline_comments(
     commit_id: str,
     ctx,
 ) -> tuple[list[dict], list[dict]]:
-    """Post findings as inline PR review comments. Returns (posted, failed)."""
+    """Post findings as inline PR review comments. Returns (posted, failed).
+
+    Individual posts may fail if line is outside diff range — caller handles
+    failed items by including them in the general comment summary.
+    """
     posted: list[dict] = []
     failed: list[dict] = []
     nwo = f"{owner}/{repo}"
@@ -726,10 +738,11 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
 
 @agent(id="gh", version="1.0.0", description="GitHub PR operations agent")
 def execute(prompt: str, ctx) -> OkResult | ErrResult:
-    """Parse operation from prompt and dispatch to handler.
+    """Dispatch to operation handler based on prompt.
 
-    Two-pass parsing: first extracts raw dict to read the operation
-    discriminator, then re-parses with the typed dataclass schema.
+    Two-pass parsing: raw parse extracts operation discriminator, then
+    re-parses with typed dataclass for validation. Pattern used across
+    all bundled agents for type-safe operation routing.
     """
     raw = parse_input(prompt)
     operation = raw.get("operation")

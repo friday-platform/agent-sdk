@@ -1,8 +1,10 @@
-"""Jira agent — deterministic issue operations via the Jira REST API.
+"""Jira agent — deterministic issue operations via the Jira REST API v3.
 
 Port of packages/bundled-agents/src/jira/agent.ts to Python.
-Uses parse_input to extract operation configs from enriched prompts,
+Uses parse_operation to extract operation configs from enriched prompts,
 then dispatches to handlers that call Jira API via ctx.http.
+
+Jira REST API docs: https://developer.atlassian.com/cloud/jira/platform/rest/v3/
 """
 
 import base64
@@ -90,9 +92,10 @@ def _extract_adf_text(adf) -> str:
 
 
 def _text_to_adf(text: str) -> dict:
-    """Convert plain text to minimal ADF document.
+    """Convert plain text to minimal ADF (Atlassian Document Format).
 
-    Supports [text](url) markdown links.
+    ADF is Jira's rich text format. Supports [text](url) markdown links.
+    See: https://developer.atlassian.com/cloud/jira/platform/apis/document/jira-document-structure/
     """
     content = []
     parts = re.split(
@@ -127,7 +130,11 @@ def _text_to_adf(text: str) -> dict:
 
 
 def _build_auth_header(ctx) -> str:
-    """Build Basic Auth header from JIRA_EMAIL and JIRA_API_TOKEN."""
+    """Build Basic Auth header from JIRA_EMAIL and JIRA_API_TOKEN.
+
+    Jira uses email + API token (not password) for Basic Auth.
+    See: https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/
+    """
     email = ctx.env.get("JIRA_EMAIL", "")
     token = ctx.env.get("JIRA_API_TOKEN", "")
     credentials = base64.b64encode(f"{email}:{token}".encode()).decode()
@@ -135,7 +142,7 @@ def _build_auth_header(ctx) -> str:
 
 
 def _issue_view(config: IssueViewConfig, ctx) -> OkResult | ErrResult:
-    """Fetch Jira issue metadata via REST API."""
+    """Jira API v3: GET /rest/api/3/issue/{key}"""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/issue/{config.issue_key}"
 
@@ -148,6 +155,7 @@ def _issue_view(config: IssueViewConfig, ctx) -> OkResult | ErrResult:
         },
     )
 
+    # 500 char limit — Jira error responses can be verbose HTML
     if response.status >= 400:
         return err(f"Jira API error {response.status}: {response.body[:500]}")
 
@@ -201,9 +209,10 @@ def _issue_search(
     config: IssueSearchConfig,
     ctx,
 ) -> OkResult | ErrResult:
-    """Search Jira issues via JQL using POST /rest/api/3/search/jql."""
+    """Jira API v3: POST /rest/api/3/search/jql — JQL query endpoint."""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/search/jql"
+    # Jira maxResults capped at 100 — higher values silently ignored
     capped = min(config.max_results, 100)
 
     body = json.dumps(
@@ -328,7 +337,7 @@ def _issue_create(
     config: IssueCreateConfig,
     ctx,
 ) -> OkResult | ErrResult:
-    """Create a Jira issue via POST /rest/api/3/issue."""
+    """Jira API v3: POST /rest/api/3/issue"""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/issue"
 
@@ -377,7 +386,7 @@ def _issue_update(
     config: IssueUpdateConfig,
     ctx,
 ) -> OkResult | ErrResult:
-    """Update a Jira issue via PUT /rest/api/3/issue/{key}."""
+    """Jira API v3: PUT /rest/api/3/issue/{key}"""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/issue/{config.issue_key}"
 
@@ -422,7 +431,7 @@ def _issue_comment(
     config: IssueCommentConfig,
     ctx,
 ) -> OkResult | ErrResult:
-    """Add a comment to a Jira issue."""
+    """Jira API v3: POST /rest/api/3/issue/{key}/comment"""
     site = ctx.env.get("JIRA_SITE", "")
     url = f"https://{site}/rest/api/3/issue/{config.issue_key}/comment"
 
@@ -456,10 +465,10 @@ def _issue_comment(
 
 @agent(id="jira", version="1.0.0", description="Jira issue operations agent")
 def execute(prompt: str, ctx) -> OkResult | ErrResult:
-    """Parse operation from prompt and dispatch to handler.
+    """Dispatch to operation handler based on prompt.
 
-    Single-pass parsing: filters to JSON objects containing "operation",
-    uses the discriminator to select the right schema, validates in one step.
+    Single-pass parsing with discriminator: parse_operation() filters to
+    JSON containing "operation", selects schema, validates in one step.
     """
     try:
         config = parse_operation(prompt, _OPERATION_SCHEMAS)
