@@ -21,7 +21,6 @@ Task-focused recipes for common patterns:
 | [Use MCP tools](how-to/use-mcp-tools.md)                     | Invoke Model Context Protocol servers                        |
 | [Handle structured input](how-to/handle-structured-input.md) | Extract JSON from Friday's enriched prompts                  |
 | [Stream progress](how-to/stream-progress.md)                 | Emit real-time updates to the UI                             |
-| [Return artifacts](how-to/return-artifacts.md)               | Persist outputs and add outline references                   |
 
 ## Reference
 
@@ -35,7 +34,7 @@ Complete API documentation:
 | [ctx.http](reference/http-capability.md)         | HTTP fetch and response handling              |
 | [ctx.tools](reference/tools-capability.md)       | MCP tool listing and invocation               |
 | [ctx.stream](reference/stream-capability.md)     | Progress and intent emission                  |
-| [Result types](reference/result-types.md)        | `ok()`, `err()`, and `AgentExtras`            |
+| [Result types](reference/result-types.md)        | `ok()`, `err()`, and tagged union pattern     |
 | [Parse utilities](reference/parse-utilities.md)  | `parse_input()` and `parse_operation()`       |
 
 ## Explanation
@@ -48,15 +47,15 @@ Understanding the architecture:
 
 Working code in [`../examples/`](../examples/):
 
-| Example             | Shows                                                        |
-| ------------------- | ------------------------------------------------------------ |
-| `echo-agent`        | Minimal agent — returns input unchanged                      |
-| `llm-http-agent`    | LLM and HTTP capability round-trips                          |
-| `tools-agent`       | MCP tool listing and invocation                              |
-| `time-agent`        | Real MCP server usage (time operations)                      |
-| `context-inspector` | All context fields and round-trip verification               |
-| `jira-agent`        | Structured input parsing with operations                     |
-| `claude-code-agent` | Full-featured agent with fallbacks, artifacts, and reasoning |
+| Example             | Shows                                                  |
+| ------------------- | ------------------------------------------------------ |
+| `echo-agent`        | Minimal agent — returns input unchanged                |
+| `llm-http-agent`    | LLM and HTTP capability round-trips                    |
+| `tools-agent`       | MCP tool listing and invocation                        |
+| `time-agent`        | Real MCP server usage (time operations)                |
+| `context-inspector` | All context fields and round-trip verification         |
+| `jira-agent`        | Structured input parsing with operations               |
+| `claude-code-agent` | Full-featured agent with fallbacks and model selection |
 
 ## Document Types
 

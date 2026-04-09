@@ -150,34 +150,6 @@ content_type = response.headers.get("content-type", "")
 rate_limit = response.headers.get("x-ratelimit-remaining")
 ```
 
-## Creating Artifacts
-
-Common pattern: create Friday platform artifacts via HTTP API:
-
-```python
-import json
-
-response = ctx.http.fetch(
-    f"{ctx.config.get('platformUrl', 'http://localhost:8080')}/api/artifacts",
-    method="POST",
-    headers={"Content-Type": "application/json"},
-    body=json.dumps({
-        "data": {
-            "type": "analysis",
-            "version": 1,
-            "data": analysis_result,
-        },
-        "title": "Analysis Report",
-        "summary": "Comprehensive analysis",
-    }),
-)
-
-if response.status < 400:
-    artifact = response.json().get("artifact", {})
-    artifact_id = artifact.get("id")
-    ...
-```
-
 ## REST API Patterns
 
 ```python
@@ -270,4 +242,3 @@ The WASM sandbox blocks the `ssl` module, which `httpx` imports unconditionally.
 ## See Also
 
 - [How to Make HTTP Requests](../how-to/make-http-requests.md) — Task-oriented guide
-- [How to Return Artifacts](../how-to/return-artifacts.md) — Creating platform artifacts

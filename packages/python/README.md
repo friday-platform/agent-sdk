@@ -70,7 +70,6 @@ curl -s -X POST http://localhost:15200/api/execute \
   - [Use MCP tools](docs/how-to/use-mcp-tools.md)
   - [Handle structured input](docs/how-to/handle-structured-input.md)
   - [Stream progress updates](docs/how-to/stream-progress.md)
-  - [Return artifacts and outline references](docs/how-to/return-artifacts.md)
 - [**API Reference**](docs/reference/) — Complete decorator, context, and capability documentation
 - [**How Friday Agents Work**](docs/explanation/how-agents-work.md) — Architecture, WASM sandbox, and design decisions
 
@@ -89,15 +88,15 @@ pip install -e .  # or uv pip install -e .
 
 See the [`examples/`](examples/) directory for complete agents ranging from minimal to production-grade:
 
-| Example             | Demonstrates                                               |
-| ------------------- | ---------------------------------------------------------- |
-| `echo-agent`        | Minimal agent — just returns input                         |
-| `llm-http-agent`    | `ctx.llm.generate()` and `ctx.http.fetch()`                |
-| `tools-agent`       | `ctx.tools.list()` and `ctx.tools.call()`                  |
-| `time-agent`        | MCP server configuration and tool usage                    |
-| `jira-agent`        | Structured input parsing with `parse_operation()`          |
-| `bb-agent`          | Bitbucket PR operations — production HTTP patterns         |
-| `claude-code-agent` | Full coding agent with fallbacks, artifacts, and reasoning |
+| Example             | Demonstrates                                         |
+| ------------------- | ---------------------------------------------------- |
+| `echo-agent`        | Minimal agent — just returns input                   |
+| `llm-http-agent`    | `ctx.llm.generate()` and `ctx.http.fetch()`          |
+| `tools-agent`       | `ctx.tools.list()` and `ctx.tools.call()`            |
+| `time-agent`        | MCP server configuration and tool usage              |
+| `jira-agent`        | Structured input parsing with `parse_operation()`    |
+| `bb-agent`          | Bitbucket PR operations — production HTTP patterns   |
+| `claude-code-agent` | Full coding agent with fallbacks and model selection |
 
 Each example includes a compiled `agent.wasm` and `agent-js/` directory for reference.
 

@@ -10,7 +10,7 @@ The Friday Agent SDK lets you write agents in familiar languages (starting with 
 - Make outbound HTTP requests through the host's fetch layer
 - Invoke MCP tools configured at the workspace level
 - Stream progress updates back to the user
-- Return structured data, artifacts, and outline references
+- Return structured data to the host
 
 ## Repository Structure
 
