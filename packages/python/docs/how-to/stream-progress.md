@@ -52,7 +52,7 @@ ctx.stream.progress("Fetching repository data", tool_name="GitHub")
 
 # Call GitHub MCP tools...
 
-ctx.stream.progress("Analysing code patterns", tool_name="Analyser")
+ctx.stream.progress("Analyzing code patterns", tool_name="Analyzer")
 
 # LLM analysis...
 
@@ -64,7 +64,7 @@ ctx.stream.progress("Creating summary", tool_name="Reporter")
 ```python
 from friday_agent_sdk import agent, ok, AgentExtras
 
-@agent(id="analyser", version="1.0.0", description="Multi-phase analysis")
+@agent(id="analyzer", version="1.0.0", description="Multi-phase analysis")
 def execute(prompt, ctx):
     # Phase 1: Extract parameters
     ctx.stream.progress("Parsing request")
@@ -73,7 +73,7 @@ def execute(prompt, ctx):
     # Phase 2: LLM preprocessing
     ctx.stream.progress("Running initial analysis", tool_name="LLM")
     analysis = ctx.llm.generate(
-        messages=[{"role": "user", "content": f"Analyse: {params}"}],
+        messages=[{"role": "user", "content": f"Analyze: {params}"}],
         model="claude-haiku-4-5",
     )
 

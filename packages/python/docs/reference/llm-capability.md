@@ -52,7 +52,7 @@ Generate text from an LLM.
 
 ```python
 result = ctx.llm.generate(
-    messages=[{"role": "user", "content": "Summarise this article"}],
+    messages=[{"role": "user", "content": "Summarize this article"}],
     model="anthropic:claude-sonnet-4-6",
     max_tokens=1000,
     temperature=0.7,
@@ -92,7 +92,7 @@ schema = {
 }
 
 result = ctx.llm.generate_object(
-    messages=[{"role": "user", "content": "Analyse this"}],
+    messages=[{"role": "user", "content": "Analyze this"}],
     schema=schema,
     model="anthropic:claude-haiku-4-5",
 )
@@ -174,7 +174,7 @@ messages = [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello!"},
     {"role": "assistant", "content": "Hi there!"},
-    {"role": "user", "content": "Analyse this code..."},
+    {"role": "user", "content": "Analyze this code..."},
 ]
 ```
 

@@ -22,24 +22,24 @@ ANTHROPIC_API_KEY=sk-ant-...
 Create an agent in the `agents/` directory:
 
 ```bash
-mkdir -p agents/my-analyser
+mkdir -p agents/my-analyzer
 ```
 
-Write `agents/my-analyser/agent.py`:
+Write `agents/my-analyzer/agent.py`:
 
 ```python
 from friday_agent_sdk import agent, ok, AgentContext
 from friday_agent_sdk._bridge import Agent  # componentize-py requires this import
 
 @agent(
-    id="my-analyser",
+    id="my-analyzer",
     version="1.0.0",
-    description="Analyses text with an LLM",
+    description="Analyzes text with an LLM",
 )
 def execute(prompt: str, ctx: AgentContext):
     # Call the host's LLM provider — no API key needed
     result = ctx.llm.generate(
-        messages=[{"role": "user", "content": f"Summarise this: {prompt}"}],
+        messages=[{"role": "user", "content": f"Summarize this: {prompt}"}],
         model="anthropic:claude-haiku-4-5",
     )
     return ok({"summary": result.text})
@@ -58,7 +58,7 @@ Test it:
 ```bash
 curl -s -X POST http://localhost:15200/api/execute \
   -H 'Content-Type: application/json' \
-  -d '{"agentId": "my-analyser", "input": "Summarise this codebase"}' | jq .
+  -d '{"agentId": "my-analyzer", "input": "Summarize this codebase"}' | jq .
 ```
 
 ## Documentation
@@ -193,6 +193,6 @@ Phases: `"compile"` (Python syntax), `"transpile"` (jco WASM-to-JS), `"validate"
 **Import errors in IDE but build works**
 The `friday_agent_sdk` is compiled into WASM — your IDE needs it installed locally (`pip install -e .`) for type checking, but this is separate from the WASM build.
 
-## Licence
+## License
 
 MIT

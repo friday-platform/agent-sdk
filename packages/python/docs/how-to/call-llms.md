@@ -61,7 +61,7 @@ schema = {
 }
 
 result = ctx.llm.generate_object(
-    messages=[{"role": "user", "content": "Analyse this task"}],
+    messages=[{"role": "user", "content": "Analyze this task"}],
     schema=schema,
     model="anthropic:claude-sonnet-4-6",
 )

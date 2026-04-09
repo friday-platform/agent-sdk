@@ -236,11 +236,11 @@ def execute(prompt, ctx):
             "owner": "my-org",
             "repo": "my-repo",
             "issue_number": top_issue["number"],
-            "body": "Analysing this issue now...",
+            "body": "Analyzing this issue now...",
         },
     )
 
-    return ok({"analysed": top_issue["title"]})
+    return ok({"analyzed": top_issue["title"]})
 ```
 
 ## Schema Inspection

@@ -34,14 +34,14 @@ The build API validates that all three are present. Missing any returns HTTP 400
 - **Type:** `str`
 - **Description:** Unique identifier for the agent. Use kebab-case.
 - **Constraints:** Must be unique within your workspace. Friday prepends `user:` automatically.
-- **Example:** `"text-analyser"`, `"github-helper"`, `"jira-operations"`
+- **Example:** `"text-analyzer"`, `"github-helper"`, `"jira-operations"`
 
 ### `version`
 
 - **Type:** `str`
 - **Description:** Semantic version of the agent.
 - **Example:** `"1.0.0"`, `"2.1.0-alpha.1"`
-- **Behaviour:** Multiple versions coexist on disk; Friday resolves the ID to the highest semver version.
+- **Behavior:** Multiple versions coexist on disk; Friday resolves the ID to the highest semver version.
 
 ### `description`
 
@@ -77,7 +77,7 @@ The build API validates that all three are present. Missing any returns HTTP 400
 examples=[
     "Write a Python function to parse JSON",
     "Debug this error in the codebase",
-    "Analyse stack traces and identify root causes",
+    "Analyze stack traces and identify root causes",
 ]
 ```
 
@@ -198,13 +198,13 @@ from friday_agent_sdk import agent, ok, err, AgentContext
 from friday_agent_sdk._bridge import Agent
 
 @agent(
-    id="code-analyser",
+    id="code-analyzer",
     version="1.2.0",
-    description="Analyses code for bugs, security issues, and style violations",
+    description="Analyzes code for bugs, security issues, and style violations",
     summary="Static analysis agent for code review",
     constraints="Requires read access to repository files. Does not execute code.",
     examples=[
-        "Analyse this function for security vulnerabilities",
+        "Analyze this function for security vulnerabilities",
         "Check this code for SQL injection risks",
         "Review this PR for common anti-patterns",
     ],
@@ -255,7 +255,7 @@ The build pipeline validates metadata against `CreateAgentConfigValidationSchema
 
 Agent versions follow [Semantic Versioning](https://semver.org/):
 
-- `MAJOR` — Breaking changes to agent behaviour
+- `MAJOR` — Breaking changes to agent behavior
 - `MINOR` — New capabilities, backwards compatible
 - `PATCH` — Bug fixes, backwards compatible
 

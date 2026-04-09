@@ -54,16 +54,16 @@ OUTPUT_SCHEMA = {
 }
 
 @agent(
-    id="text-analyser",
+    id="text-analyzer",
     version="1.0.0",
-    description="Analyses text and returns structured summary, key points, and sentiment",
+    description="Analyzes text and returns structured summary, key points, and sentiment",
     llm={"provider": "anthropic", "model": "claude-haiku-4-5"},
 )
 def execute(prompt: str, ctx: AgentContext):
     try:
         result = ctx.llm.generate_object(
             messages=[
-                {"role": "user", "content": f"Analyse the following text:\n\n{prompt}"}
+                {"role": "user", "content": f"Analyze the following text:\n\n{prompt}"}
             ],
             schema=OUTPUT_SCHEMA,
         )

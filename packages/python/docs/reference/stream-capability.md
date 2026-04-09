@@ -47,7 +47,7 @@ Emit a `data-tool-progress` event for UI progress display.
 ```python
 ctx.stream.progress("Starting analysis...")
 ctx.stream.progress("Fetching repository data", tool_name="GitHub")
-ctx.stream.progress("Analysing code patterns", tool_name="Analyser")
+ctx.stream.progress("Analyzing code patterns", tool_name="Analyzer")
 ```
 
 ### intent()
@@ -83,7 +83,7 @@ def execute(prompt, ctx):
     ctx.stream.progress("Phase 3: Analysing", tool_name="LLM")
     analysis = ctx.llm.generate(...)
 
-    ctx.stream.progress("Phase 4: Finalising")
+    ctx.stream.progress("Phase 4: Finalizing")
     return ok({"result": analysis.text})
 ```
 
@@ -102,7 +102,7 @@ def execute(prompt, ctx):
         ctx.stream.progress(f"Step {step.number}: {step.description}")
         execute_step(step)
 
-    ctx.stream.intent("Finalising results")
+    ctx.stream.intent("Finalizing results")
     return ok({"completed": True})
 ```
 
@@ -110,7 +110,7 @@ def execute(prompt, ctx):
 
 ```python
 def execute(prompt, ctx):
-    ctx.stream.progress("Initialising", tool_name="Setup")
+    ctx.stream.progress("Initializing", tool_name="Setup")
 
     ctx.stream.progress("Querying database", tool_name="PostgreSQL")
     rows = ctx.tools.call("query", {"sql": "SELECT ..."})
@@ -175,7 +175,7 @@ Custom types can be emitted via `emit()` but may not have UI handlers.
 ## Best Practices
 
 - **Emit before expensive operations** — Warn users before long LLM calls
-- **Use tool_name for grouping** — Helps UI organise progress by component
+- **Use tool_name for grouping** — Helps UI organize progress by component
 - **Keep messages concise** — 50-100 characters ideal for UI display
 - **Avoid tight loop emission** — Batch or debounce high-frequency updates
 - **Prefer intent for phases, progress for detail** — Two-level hierarchy

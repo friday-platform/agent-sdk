@@ -8,7 +8,7 @@ New to Friday agents? Start with the tutorial:
 
 [**→ Your First Friday Agent**](tutorial/your-first-agent.md)
 
-Build a complete agent that uses an LLM to analyse text, run it in Friday, and iterate on your design.
+Build a complete agent that uses an LLM to analyze text, run it in Friday, and iterate on your design.
 
 ## How-to Guides
 
@@ -72,4 +72,4 @@ Documentation improvements welcome. Open an issue or PR in the [agent-sdk reposi
 
 ---
 
-**British English spelling used throughout.**
+**US English spelling used throughout.**

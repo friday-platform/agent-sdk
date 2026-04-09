@@ -61,10 +61,10 @@ subdirectory becomes an agent.
 Create the directory and open `agent.py` in your editor:
 
 ```bash
-mkdir -p agents/text-analyser
+mkdir -p agents/text-analyzer
 ```
 
-Write `agents/text-analyser/agent.py`:
+Write `agents/text-analyzer/agent.py`:
 
 ```python
 from dataclasses import dataclass
@@ -80,12 +80,12 @@ class AnalysisResult:
 
 
 @agent(
-    id="text-analyser",
+    id="text-analyzer",
     version="1.0.0",
-    description="Analyses text and returns structured summary, key points, and sentiment",
+    description="Analyzes text and returns structured summary, key points, and sentiment",
 )
 def execute(prompt: str, ctx: AgentContext):
-    """Analyse the user's text using an LLM."""
+    """Analyze the user's text using an LLM."""
 
     # Define the schema for structured output
     output_schema = {
@@ -106,7 +106,7 @@ def execute(prompt: str, ctx: AgentContext):
     }
 
     # Call the host's LLM — your agent never sees the API key
-    analysis_prompt = f"""Analyse the following text.
+    analysis_prompt = f"""Analyze the following text.
 
 Text:
 {prompt}
@@ -144,7 +144,7 @@ succeeded:
 
 ```bash
 docker compose logs platform | grep -i "built agent"
-# Built agent text-analyser@1.0.0 from source
+# Built agent text-analyzer@1.0.0 from source
 ```
 
 Test your agent with curl against the playground API on port `15200`:
@@ -153,7 +153,7 @@ Test your agent with curl against the playground API on port `15200`:
 curl -s -X POST http://localhost:15200/api/execute \
   -H 'Content-Type: application/json' \
   -d '{
-    "agentId": "text-analyser",
+    "agentId": "text-analyzer",
     "input": "The new feature shipped on time and customers report faster load times. Support tickets are down 40%."
   }' | jq .
 ```
@@ -178,7 +178,7 @@ Try a different input:
 curl -s -X POST http://localhost:15200/api/execute \
   -H 'Content-Type: application/json' \
   -d '{
-    "agentId": "text-analyser",
+    "agentId": "text-analyzer",
     "input": "The server crashed twice today. The database is throwing connection errors and the logs are incomprehensible."
   }' | jq .
 ```
@@ -190,26 +190,26 @@ Your agent classifies this as `"sentiment": "negative"`.
 >
 > ```bash
 > # From the host
-> atlas agent exec text-analyser \
->   -i "analyse this text" \
+> atlas agent exec text-analyzer \
+>   -i "analyze this text" \
 >   --url http://localhost:15200
 >
 > # Or from inside the container
-> docker compose exec platform atlas agent exec text-analyser \
->   -i "analyse this text"
+> docker compose exec platform atlas agent exec text-analyzer \
+>   -i "analyze this text"
 > ```
 >
 > Add `--json` for raw NDJSON output (useful for piping to `jq`).
 
 ## Step 4: Iterate
 
-Edit `agents/text-analyser/agent.py`, then rebuild and test:
+Edit `agents/text-analyzer/agent.py`, then rebuild and test:
 
 ```bash
 docker compose restart platform
 curl -s -X POST http://localhost:15200/api/execute \
   -H 'Content-Type: application/json' \
-  -d '{"agentId": "text-analyser", "input": "test your changes"}' | jq .
+  -d '{"agentId": "text-analyzer", "input": "test your changes"}' | jq .
 ```
 
 This cycle — edit, restart, test — is your development loop.
@@ -218,13 +218,13 @@ Bump the version to keep old builds available for rollback:
 
 ```python
 @agent(
-    id="text-analyser",
+    id="text-analyzer",
     version="1.0.1",  # Bumped from 1.0.0
-    description="Analyses text with an LLM",
+    description="Analyzes text with an LLM",
 )
 ```
 
-Both versions are stored, but Friday resolves `text-analyser` to the latest
+Both versions are stored, but Friday resolves `text-analyzer` to the latest
 semver version (`1.0.1`).
 
 ## Step 5: Register in a Workspace (Optional)
@@ -234,12 +234,12 @@ multi-agent orchestration), add it to your workspace's `workspace.yml`:
 
 ```yaml
 agents:
-  - id: text-analyser
+  - id: text-analyzer
     type: user
 ```
 
-Friday adds the `user:` prefix automatically — you specify `text-analyser`,
-Friday resolves it to `user:text-analyser`. This step is not required for direct
+Friday adds the `user:` prefix automatically — you specify `text-analyzer`,
+Friday resolves it to `user:text-analyzer`. This step is not required for direct
 execution.
 
 ## What You Have Learned
@@ -298,13 +298,13 @@ the CLI commands work without the Docker layer:
 atlas daemon status        # verify the daemon is running
 atlas link list            # verify credentials are connected
 atlas agent build ./agent.py
-atlas agent exec text-analyser -i "test input"
+atlas agent exec text-analyzer -i "test input"
 ```
 
 The daemon listens on port `8080` locally (not `18080`). See the
 [Friday CLI documentation](https://github.com/atlas-ai/friday) for setup.
 
-### Customising the Agent Directory
+### Customizing the Agent Directory
 
 By default, Friday watches `./agents/` next to your `docker-compose.yml`. To
 use a different directory, set `AGENTS_DIR` in your `.env`:
@@ -338,7 +338,7 @@ Verify your `.env` file contains `ANTHROPIC_API_KEY` and restart the platform:
 
 ## The Complete Code
 
-Your final `agents/text-analyser/agent.py`:
+Your final `agents/text-analyzer/agent.py`:
 
 ```python
 from dataclasses import dataclass
@@ -354,9 +354,9 @@ class AnalysisResult:
 
 
 @agent(
-    id="text-analyser",
+    id="text-analyzer",
     version="1.0.0",
-    description="Analyses text and returns structured summary, key points, and sentiment",
+    description="Analyzes text and returns structured summary, key points, and sentiment",
 )
 def execute(prompt: str, ctx: AgentContext):
     output_schema = {
@@ -376,7 +376,7 @@ def execute(prompt: str, ctx: AgentContext):
         "additionalProperties": False,
     }
 
-    analysis_prompt = f"""Analyse the following text.
+    analysis_prompt = f"""Analyze the following text.
 
 Text:
 {prompt}
