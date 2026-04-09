@@ -247,15 +247,49 @@ class SessionData:
     datetime: str
 
 
+def _uninitialized_llm():
+    """Factory for uninitialized LLM stub."""
+    def stub(_: str) -> str:
+        raise RuntimeError("LLM capability not initialized - this should only happen in tests without proper context setup")
+    return Llm(stub)
+
+
+def _uninitialized_tools():
+    """Factory for uninitialized Tools stub."""
+    def call_stub(_: str, __: str) -> Any:
+        raise RuntimeError("Tools capability not initialized - this should only happen in tests without proper context setup")
+    def list_stub() -> list:
+        return []
+    return Tools(call_stub, list_stub)
+
+
+def _uninitialized_http():
+    """Factory for uninitialized Http stub."""
+    def stub(_: str) -> str:
+        raise RuntimeError("HTTP capability not initialized - this should only happen in tests without proper context setup")
+    return Http(stub)
+
+
+def _uninitialized_stream():
+    """Factory for uninitialized StreamEmitter stub (no-op)."""
+    def stub(_: str, __: str) -> None:
+        pass
+    return StreamEmitter(stub)
+
+
 @dataclass
 class AgentContext:
-    """Execution context passed to agent handlers."""
+    """Execution context passed to agent handlers.
+
+    Capability fields (llm, tools, http, stream) are always non-None.
+    Defaults are safe stubs that raise if called outside the host environment.
+    """
 
     env: dict[str, str] = field(default_factory=dict)
     config: dict = field(default_factory=dict)
     session: SessionData | None = None
     output_schema: dict | None = None
-    tools: Tools | None = None
-    llm: Llm | None = None
-    http: Http | None = None
-    stream: StreamEmitter | None = None
+    tools: Tools = field(default_factory=_uninitialized_tools)
+    llm: Llm = field(default_factory=_uninitialized_llm)
+    http: Http = field(default_factory=_uninitialized_http)
+    stream: StreamEmitter = field(default_factory=_uninitialized_stream)
