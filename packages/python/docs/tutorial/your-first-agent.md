@@ -302,7 +302,7 @@ atlas agent exec text-analyzer -i "test input"
 ```
 
 The daemon listens on port `8080` locally (not `18080`). See the
-[Friday CLI documentation](https://github.com/atlas-ai/friday) for setup.
+Friday CLI documentation for setup.
 
 ### Customizing the Agent Directory
 

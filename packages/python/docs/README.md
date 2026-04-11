@@ -68,7 +68,7 @@ This documentation follows the [Diataxis framework](https://diataxis.fr/):
 
 ## Contributing
 
-Documentation improvements welcome. Open an issue or PR in the [agent-sdk repository](https://github.com/atlas-ai/agent-sdk).
+Documentation improvements welcome. Open an issue or PR in the [agent-sdk repository](https://github.com/friday-platform/agent-sdk).
 
 ---
 
