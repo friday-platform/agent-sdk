@@ -110,7 +110,9 @@ class TestFetch:
         assert issubclass(HttpError, Exception)
 
     def test_empty_headers_and_body_defaults(self):
-        mock = MagicMock(return_value=json.dumps({"status": 204}))
+        mock = MagicMock(
+            return_value=json.dumps({"status": 204})
+        )
         http = Http(http_fetch=mock)
 
         result = http.fetch("https://example.com")

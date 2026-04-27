@@ -1,5 +1,6 @@
-# friday-agent-sdk: Python SDK for authoring Friday WASM agents
+# friday-agent-sdk: Python SDK for authoring Friday agents
 
+from friday_agent_sdk._bridge import run
 from friday_agent_sdk._decorator import agent
 from friday_agent_sdk._parse import parse_input, parse_operation
 from friday_agent_sdk._result import (
@@ -14,15 +15,22 @@ from friday_agent_sdk._result import (
 )
 from friday_agent_sdk._types import (
     AgentContext,
+    Http,
     HttpError,
     HttpResponse,
+    Llm,
     LlmError,
     LlmResponse,
+    SessionData,
+    SkillDefinition,
     StreamEmitter,
     ToolCallError,
+    ToolDefinition,
+    Tools,
 )
 
 __all__ = [
+    "run",
     "agent",
     "parse_input",
     "parse_operation",
@@ -35,10 +43,16 @@ __all__ = [
     "ArtifactRef",
     "OutlineRef",
     "AgentContext",
-    "ToolCallError",
-    "LlmError",
-    "LlmResponse",
+    "Http",
     "HttpError",
     "HttpResponse",
+    "Llm",
+    "LlmError",
+    "LlmResponse",
+    "SessionData",
+    "SkillDefinition",
     "StreamEmitter",
+    "ToolCallError",
+    "ToolDefinition",
+    "Tools",
 ]
