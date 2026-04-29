@@ -92,7 +92,7 @@ async def _validate_async(validate_id: str) -> None:
 
 async def _run_async() -> None:
     nats_url = os.environ.get("NATS_URL", "nats://localhost:4222")
-    session_id = os.environ["ATLAS_SESSION_ID"]
+    session_id = os.environ["FRIDAY_SESSION_ID"]
 
     nc = NATS()
     await nc.connect(nats_url)
@@ -131,10 +131,10 @@ async def _run_async() -> None:
 def run() -> None:
     """Entry point called from agent.py __main__ block.
 
-    Checks ATLAS_VALIDATE_ID first (registration handshake), then falls
-    through to normal execution with ATLAS_SESSION_ID.
+    Checks FRIDAY_VALIDATE_ID first (registration handshake), then falls
+    through to normal execution with FRIDAY_SESSION_ID.
     """
-    validate_id = os.environ.get("ATLAS_VALIDATE_ID")
+    validate_id = os.environ.get("FRIDAY_VALIDATE_ID")
     if validate_id:
         asyncio.run(_validate_async(validate_id))
         return
