@@ -81,6 +81,18 @@ async def _validate_async(validate_id: str) -> None:
         metadata["mcp"] = reg.mcp
     if reg.use_workspace_skills:
         metadata["useWorkspaceSkills"] = True
+    if reg.summary is not None:
+        metadata["summary"] = reg.summary
+    if reg.constraints is not None:
+        metadata["constraints"] = reg.constraints
+    if reg.examples:
+        metadata["expertise"] = {"examples": reg.examples}
+    if reg.environment is not None:
+        metadata["environment"] = reg.environment
+    if reg.input_json_schema is not None:
+        metadata["inputSchema"] = reg.input_json_schema
+    if reg.output_json_schema is not None:
+        metadata["outputSchema"] = reg.output_json_schema
 
     nc = NATS()
     await nc.connect(nats_url)
