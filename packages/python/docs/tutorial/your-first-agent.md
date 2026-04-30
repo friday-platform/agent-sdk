@@ -2,7 +2,7 @@
 
 Build a text analysis agent, from an empty directory to a running result. By the end you will have registered and tested an agent inside Friday.
 
-## What You Will Build
+## What you will build
 
 A text analysis agent that accepts a topic and returns a structured analysis with a summary, key points, and a sentiment rating. It demonstrates:
 
@@ -19,7 +19,7 @@ A text analysis agent that accepts a topic and returns a structured analysis wit
 
 > **Tip:** Installing the SDK locally (`pip install -e .`) gives your editor autocomplete and type checking.
 
-## Step 1: Start the Platform
+## Step 1: Start the platform
 
 Ensure the Friday daemon is running:
 
@@ -51,7 +51,7 @@ cd packages/python
 pip install -e .
 ```
 
-## Step 3: Create the Agent File
+## Step 3: Create the agent file
 
 Create the directory and open `agent.py` in your editor:
 
@@ -128,7 +128,7 @@ Four things to notice:
 - `ok()` wraps your structured data in the result format Friday expects.
 - `run()` in the `__main__` block is the entry point. Without it, the agent spawns and immediately exits.
 
-## Step 4: Register and Test
+## Step 4: Register and test
 
 Register your agent:
 
@@ -195,7 +195,7 @@ Bump the version to keep old registrations available:
 
 Both versions are stored, but Friday resolves `text-analyzer` to the latest semver version (`1.0.1`).
 
-## Step 6: Register in a Workspace (Optional)
+## Step 6: Register in a workspace (optional)
 
 To use your agent within a Friday workspace (for planner routing, signals, and multi-agent orchestration), add it to your workspace's `workspace.yml`:
 
@@ -207,7 +207,7 @@ agents:
 
 Friday adds the `user:` prefix automatically — you specify `text-analyzer`, Friday resolves it to `user:text-analyzer`. This step is not required for direct execution.
 
-## What You Have Learned
+## What you have learned
 
 - The `@agent` decorator registers metadata Friday uses for discovery
 - `ctx.llm.generate()` and `ctx.llm.generate_object()` route through the host's provider registry
@@ -216,7 +216,7 @@ Friday adds the `user:` prefix automatically — you specify `text-analyzer`, Fr
 - `atlas agent register` stores source code and metadata; `atlas agent exec` runs it
 - Adding `type: user` to `workspace.yml` integrates your agent into a workspace for planner routing
 
-## Next Steps
+## Next steps
 
 - [Call LLMs with different models and options](../how-to/call-llms.md)
 - [Make HTTP requests to external APIs](../how-to/make-http-requests.md)
@@ -227,9 +227,9 @@ Friday adds the `user:` prefix automatically — you specify `text-analyzer`, Fr
 
 ---
 
-## Advanced Topics
+## Advanced topics
 
-### Using the HTTP API Directly
+### Using the HTTP API directly
 
 For CI/CD pipelines or automation, register agents via the daemon API:
 
@@ -249,7 +249,7 @@ Error responses include the phase that failed (`prereqs`, `validate`, `write`):
 }
 ```
 
-### Custom Entry Points
+### Custom entry points
 
 If your agent file is not named `agent.py`:
 
@@ -257,7 +257,7 @@ If your agent file is not named `agent.py`:
 atlas agent register ./my-agent --entry main.py
 ```
 
-### Local Development (Without Docker)
+### Local development (without Docker)
 
 If you run the Friday daemon directly on your machine (e.g. as a contributor):
 
@@ -287,7 +287,7 @@ The agent may not be signaling readiness. Verify `run()` is called and the daemo
 **Credentials not working**
 Verify your `.env` file contains `ANTHROPIC_API_KEY` and the platform is running: `docker compose ps platform`.
 
-## The Complete Code
+## The complete code
 
 Your final `agents/text-analyzer/agent.py`:
 

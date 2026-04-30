@@ -103,7 +103,7 @@ class ErrResult:
 
 The `error` message is passed through to the host and displayed to the user.
 
-## Tagged Union Pattern
+## Tagged union pattern
 
 `OkResult` and `ErrResult` are distinct types. It is impossible to:
 
@@ -137,12 +137,12 @@ def handle(result: AgentResult):
 
 The SDK handles this automatically — you only work with `ok()` and `err()` in agent code.
 
-## Best Practices
+## Best practices
 
 - **Return structured data** — Dicts with clear field names, not raw strings
 - **Handle errors early** — Validate `ctx.env`, check capabilities, return `err()` with clear messages
 
-## Common Error Messages
+## Common error messages
 
 | Scenario            | Message                                                 |
 | ------------------- | ------------------------------------------------------- |
@@ -152,6 +152,6 @@ The SDK handles this automatically — you only work with `ok()` and `err()` in 
 | Invalid input       | `"Invalid request: {reason}"`                           |
 | Timeout             | `"Operation timed out after {duration}"`                |
 
-## See Also
+## See also
 
 - [How to Stream Progress](../how-to/stream-progress.md) — Real-time updates during execution

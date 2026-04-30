@@ -4,7 +4,7 @@ Make outbound HTTP requests through Friday's fetch layer — TLS, timeouts, and 
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## Basic GET Request
+## Basic GET request
 
 ```python
 from friday_agent_sdk import agent, ok
@@ -20,7 +20,7 @@ def execute(prompt, ctx):
     return ok({"data": data})
 ```
 
-## POST with JSON Body
+## POST with JSON body
 
 ```python
 import json
@@ -54,7 +54,7 @@ def execute(prompt, ctx):
     ...
 ```
 
-## Response Handling
+## Response handling
 
 ```python
 response = ctx.http.fetch(...)
@@ -68,7 +68,7 @@ response.body     # Response body as string
 data = response.json()  # Parses body as JSON
 ```
 
-## Error Handling
+## Error handling
 
 HTTP errors raise `HttpError`:
 
@@ -103,7 +103,7 @@ response = ctx.http.fetch(
 )
 ```
 
-## Methods and Options
+## Methods and options
 
 ```python
 response = ctx.http.fetch(
@@ -121,7 +121,7 @@ response = ctx.http.fetch(
 - **No URL allowlists yet** — Designed but not implemented; all outbound requests allowed
 - **No streaming responses** — Body returned as complete string
 
-## Why Not Use `requests` or `httpx`?
+## Why not use `requests` or `httpx`?
 
 You technically can — agents run as native Python processes, so installed packages work. But host-provided HTTP is still preferred:
 
@@ -133,7 +133,7 @@ You technically can — agents run as native Python processes, so installed pack
 
 Use `ctx.http.fetch()` for any I/O that needs production observability. Use `requests` only for internal tooling or debugging where host tracking isn't needed.
 
-## See Also
+## See also
 
 - [API reference: ctx.http](../reference/http-capability.md)
 - [How to Use MCP Tools](use-mcp-tools.md) — For APIs with official MCP servers, tools may be more ergonomic than raw HTTP

@@ -4,7 +4,7 @@ Emit progress events that appear in Friday's UI during long-running operations.
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## Basic Progress Emission
+## Basic progress emission
 
 ```python
 from friday_agent_sdk import agent, ok
@@ -25,9 +25,7 @@ def execute(prompt, ctx):
     return ok({"data": data})
 ```
 
-Progress appears in the Friday UI as streaming updates while your agent runs.
-
-## Intent Emission
+## Intent emission
 
 Emit high-level intents for significant state changes:
 
@@ -43,7 +41,7 @@ ctx.stream.intent("Identifying issues")
 ctx.stream.intent("Generating report")
 ```
 
-## With Tool Context
+## With tool context
 
 Associate progress with specific tools:
 
@@ -59,7 +57,7 @@ ctx.stream.progress("Analyzing code patterns", tool_name="Analyzer")
 ctx.stream.progress("Creating summary", tool_name="Reporter")
 ```
 
-## Real Example: Multi-Phase Agent
+## Real example: multi-phase agent
 
 ```python
 from friday_agent_sdk import agent, ok, AgentExtras
@@ -92,7 +90,7 @@ def execute(prompt, ctx):
     })
 ```
 
-## When to Emit
+## When to emit
 
 Emit progress when:
 
@@ -107,7 +105,7 @@ Do not emit:
 - For trivial operations (< 100ms)
 - Excessively verbose detail ("Step 1 of 50", "Step 2 of 50"...)
 
-## Emitting During Long Operations
+## Emitting during long operations
 
 `ctx.stream.progress()` returns immediately — it does not wait for the host to process the event. This means you can emit progress before expensive operations and the UI updates right away:
 
@@ -121,7 +119,7 @@ result = ctx.llm.generate(messages, model="claude-sonnet-4-6")
 ctx.stream.progress("LLM complete, processing...")
 ```
 
-## Fallback When Stream Unavailable
+## Fallback when stream unavailable
 
 In test contexts without a host, `ctx.stream` is a no-op stub that safely ignores calls. You can call it unconditionally:
 
@@ -135,7 +133,7 @@ def progress(ctx, msg):
 progress(ctx, "Starting...")
 ```
 
-## Raw Event Emission
+## Raw event emission
 
 For custom event types, use `emit()`:
 
@@ -145,7 +143,7 @@ ctx.stream.emit("custom-event", {"phase": "validation", "count": 42})
 
 The `data` parameter accepts either a dict (JSON-serialised) or string.
 
-## See Also
+## See also
 
 - [API reference: ctx.stream](../reference/stream-capability.md)
 - [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging details

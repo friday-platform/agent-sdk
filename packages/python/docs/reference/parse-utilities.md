@@ -108,7 +108,7 @@ match config.operation:
         handle_deploy(config)
 ```
 
-## Extraction Strategy
+## Extraction strategy
 
 Both functions search in this order:
 
@@ -118,7 +118,7 @@ Both functions search in this order:
 
 For `parse_operation()`, only JSON objects containing an `"operation"` field are considered, and the discriminator value selects the schema.
 
-## JSON in Markdown
+## JSON in markdown
 
 Input may look like:
 
@@ -138,7 +138,7 @@ Additional context about the deployment...
 
 Both `parse_input()` and `parse_operation()` extract the JSON block correctly.
 
-## Dataclass Validation
+## Dataclass validation
 
 When using a schema:
 
@@ -162,7 +162,7 @@ config = parse_input(
 )
 ````
 
-## Error Messages
+## Error messages
 
 Clear errors for debugging:
 
@@ -184,7 +184,7 @@ parse_operation('{"operation": "unknown"}', {"clone": CloneConfig})
 # ValueError: No valid operation config found. Known operations: ['clone']...
 ```
 
-## Real Example: Jira Agent
+## Real example: Jira agent
 
 ```python
 from dataclasses import dataclass
@@ -233,7 +233,7 @@ def execute(prompt, ctx):
             return err(f"Unknown operation: {config.operation}")
 ```
 
-## When to Use
+## When to use
 
 | Function                           | Use When                                                   |
 | ---------------------------------- | ---------------------------------------------------------- |
@@ -241,7 +241,7 @@ def execute(prompt, ctx):
 | `parse_input(prompt, Schema)`      | Single configuration, want typed fields                    |
 | `parse_operation(prompt, schemas)` | Multiple operations, discriminated by `"operation"` field  |
 
-## Implementation Details
+## Implementation details
 
 The balanced-brace scanner:
 
@@ -252,7 +252,7 @@ The balanced-brace scanner:
 
 This hand-rolled approach is necessary because regex cannot handle arbitrary nesting depth reliably.
 
-## See Also
+## See also
 
 - [How to Handle Structured Input](../how-to/handle-structured-input.md) — Task-oriented guide
 - [Jira agent example](../../examples/jira-agent/agent.py) — Full operation dispatch

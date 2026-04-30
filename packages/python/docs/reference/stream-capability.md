@@ -68,9 +68,9 @@ ctx.stream.intent("Identifying security issues")
 ctx.stream.intent("Generating recommendations")
 ```
 
-## Common Usage Patterns
+## Common usage patterns
 
-### Phase-Based Progress
+### Phase-based progress
 
 ```python
 def execute(prompt, ctx):
@@ -87,7 +87,7 @@ def execute(prompt, ctx):
     return ok({"result": analysis.text})
 ```
 
-### Intent for State Changes
+### Intent for state changes
 
 ```python
 def execute(prompt, ctx):
@@ -106,7 +106,7 @@ def execute(prompt, ctx):
     return ok({"completed": True})
 ```
 
-### Tool-Associated Progress
+### Tool-associated progress
 
 ```python
 def execute(prompt, ctx):
@@ -125,7 +125,7 @@ def execute(prompt, ctx):
     return ok({"count": len(processed)})
 ```
 
-### Fallback When Unavailable
+### Fallback when unavailable
 
 In test contexts without a host, `ctx.stream` is a no-op stub that safely ignores calls. You can call it unconditionally:
 
@@ -139,7 +139,7 @@ def execute(prompt, ctx):
     return ok({"done": True})
 ```
 
-## Emitting During Long Operations
+## Emitting during long operations
 
 `ctx.stream.progress()` returns immediately — it does not wait for the host to process the event. Emit before expensive operations so the UI updates right away:
 
@@ -153,7 +153,7 @@ result = ctx.llm.generate(messages, model="claude-sonnet-4-6")
 ctx.stream.progress("LLM complete")  # Sent now
 ```
 
-## Event Types
+## Event types
 
 Standard types used by Friday:
 
@@ -165,7 +165,7 @@ Standard types used by Friday:
 
 Custom types can be emitted via `emit()` but may not have UI handlers.
 
-## Best Practices
+## Best practices
 
 - **Emit before expensive operations** — Warn users before long LLM calls
 - **Use tool_name for grouping** — Helps UI organize progress by component
@@ -174,7 +174,7 @@ Custom types can be emitted via `emit()` but may not have UI handlers.
 - **Prefer intent for phases, progress for detail** — Two-level hierarchy
 - **Safe to call unconditionally** — `ctx.stream` is always initialized (stub in tests)
 
-## When to Emit
+## When to emit
 
 | Scenario           | Method                    | Example                            |
 | ------------------ | ------------------------- | ---------------------------------- |
@@ -184,7 +184,7 @@ Custom types can be emitted via `emit()` but may not have UI handlers.
 | Fallback scenarios | `progress()`              | "Retrying with alternate model..." |
 | Completion         | `intent()`                | "Analysis complete"                |
 
-## See Also
+## See also
 
 - [How to Stream Progress](../how-to/stream-progress.md) — Task-oriented guide
 - [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging

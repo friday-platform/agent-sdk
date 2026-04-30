@@ -4,7 +4,7 @@ Extract JSON configurations from Friday's enriched prompts using `parse_input()`
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## The Problem
+## The problem
 
 Friday sends your agent an "enriched prompt" — a markdown string containing:
 
@@ -15,7 +15,7 @@ Friday sends your agent an "enriched prompt" — a markdown string containing:
 
 Deterministic code agents cannot parse this like LLMs do. The SDK provides extraction utilities.
 
-## Simple JSON Extraction
+## Simple JSON extraction
 
 Use `parse_input()` to extract a JSON object from the prompt:
 
@@ -51,7 +51,7 @@ Task: Deploy the application
 ```
 ````
 
-## Extraction Strategy
+## Extraction strategy
 
 `parse_input()` searches in this order:
 
@@ -59,9 +59,9 @@ Task: Deploy the application
 2. **Code-fenced blocks** — Extracts from ` ```json ... ``` `
 3. **Full prompt** — Attempts to parse the entire prompt as JSON
 
-Unknown keys are filtered when using a dataclass schema, preventing enrichment context from crashing construction.
+When you use a dataclass schema, unknown keys are filtered out so extra context in the prompt doesn't break object construction.
 
-## Discriminated Operations
+## Discriminated operations
 
 When your agent handles multiple operations, use `parse_operation()`:
 
@@ -102,7 +102,7 @@ def execute(prompt, ctx):
             return err(f"Unknown operation: {config.operation}")
 ```
 
-## Plain Dict Extraction
+## Plain dict extraction
 
 Without a dataclass, get a plain dict:
 
@@ -115,7 +115,7 @@ task = data.get("task")
 priority = data.get("priority", "medium")
 ```
 
-## Validation Errors
+## Validation errors
 
 When using dataclasses, missing required fields produce clear errors:
 
@@ -129,7 +129,7 @@ config = parse_input('{"required_field": "value"}', StrictConfig)
 # Raises: ValueError: JSON parsed but doesn't match StrictConfig: missing {'another_required'}
 ```
 
-## Real Example: Jira Agent
+## Real example: Jira agent
 
 ```python
 from dataclasses import dataclass
@@ -176,7 +176,7 @@ def execute(prompt, ctx):
             return _create_issue(config, ctx)
 ```
 
-## When to Use Which
+## When to use which
 
 | Function                           | Use When                                            |
 | ---------------------------------- | --------------------------------------------------- |
@@ -191,7 +191,7 @@ def execute(prompt, ctx):
 - Provide default values for optional fields
 - Handle `ValueError` from parsing with graceful error returns
 
-## See Also
+## See also
 
 - [API reference: parse utilities](../reference/parse-utilities.md)
 - [Jira agent example](../../examples/jira-agent/agent.py) — Full operation dispatch

@@ -2,7 +2,7 @@
 
 Developer documentation for writing Friday agents in Python.
 
-## Quick Start
+## Quick start
 
 New to Friday agents? Start with the tutorial:
 
@@ -10,7 +10,7 @@ New to Friday agents? Start with the tutorial:
 
 Build a complete agent that uses an LLM to analyze text, register it with Friday, and iterate on your design.
 
-## How-to Guides
+## How-to guides
 
 Task-focused recipes for common patterns:
 
@@ -57,7 +57,7 @@ Working code in [`../examples/`](../examples/):
 | `jira-agent`        | Structured input parsing with operations               |
 | `claude-code-agent` | Full-featured agent with fallbacks and model selection |
 
-## Document Types
+## Document types
 
 This documentation follows the [Diataxis framework](https://diataxis.fr/):
 

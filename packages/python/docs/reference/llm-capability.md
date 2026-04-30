@@ -37,12 +37,12 @@ Generate text from an LLM.
 **Parameters:**
 
 | Parameter          | Type                   | Required | Description                                     |
-| ------------------ | ---------------------- | -------- | ----------------------------------------------- | --------------------------------------------- |
+| ------------------ | ---------------------- | -------- | ----------------------------------------------- |
 | `messages`         | `list[dict[str, str]]` | Yes      | Conversation messages with `role` and `content` |
-| `model`            | `str                   | None`    | No                                              | Model identifier (resolution cascade applies) |
-| `max_tokens`       | `int                   | None`    | No                                              | Maximum tokens to generate                    |
-| `temperature`      | `float                 | None`    | No                                              | Sampling temperature (0.0 - 2.0)              |
-| `provider_options` | `dict                  | None`    | No                                              | Provider-specific options passthrough         |
+| `model`            | `str \| None`          | No       | Model identifier (resolution applies)           |
+| `max_tokens`       | `int \| None`          | No       | Maximum tokens to generate                      |
+| `temperature`      | `float \| None`        | No       | Sampling temperature (0.0 - 2.0)                |
+| `provider_options` | `dict \| None`         | No       | Provider-specific options passthrough           |
 
 **Returns:** `LlmResponse`
 
@@ -67,13 +67,13 @@ Generate structured output conforming to a JSON Schema.
 **Parameters:**
 
 | Parameter          | Type                   | Required | Description                      |
-| ------------------ | ---------------------- | -------- | -------------------------------- | ------------------------- |
+| ------------------ | ---------------------- | -------- | -------------------------------- |
 | `messages`         | `list[dict[str, str]]` | Yes      | Conversation messages            |
 | `schema`           | `dict`                 | Yes      | JSON Schema for output structure |
-| `model`            | `str                   | None`    | No                               | Model identifier          |
-| `max_tokens`       | `int                   | None`    | No                               | Maximum tokens            |
-| `temperature`      | `float                 | None`    | No                               | Sampling temperature      |
-| `provider_options` | `dict                  | None`    | No                               | Provider-specific options |
+| `model`            | `str \| None`          | No       | Model identifier                 |
+| `max_tokens`       | `int \| None`          | No       | Maximum tokens                   |
+| `temperature`      | `float \| None`        | No       | Sampling temperature             |
+| `provider_options` | `dict \| None`         | No       | Provider-specific options        |
 
 **Returns:** `LlmResponse` with `.object` populated
 
@@ -102,9 +102,9 @@ print(data["summary"])
 print(data.get("tags", []))
 ```
 
-## Model Resolution
+## Model resolution
 
-Resolution cascade (first match wins):
+Resolution order (first match wins):
 
 1. **Fully qualified per-call** — `model="anthropic:claude-sonnet-4-6"` used directly
 2. **Bare per-call + decorator default** — `model="claude-sonnet-4-6"` + `@agent(llm={"provider": "anthropic"})` resolved to full identifier
@@ -123,7 +123,7 @@ class LlmResponse:
     finish_reason: str         # "stop", "length", "content_filter", etc.
 ```
 
-## Error Handling
+## Error handling
 
 ```python
 from friday_agent_sdk import LlmError, agent, err, ok
@@ -139,7 +139,7 @@ def execute(prompt, ctx):
     return ok({"output": result.text})
 ```
 
-## Provider Options
+## Provider options
 
 Pass provider-specific configuration:
 
@@ -167,7 +167,7 @@ Options vary by provider. Common patterns:
 - `fallbackModel` — Model to use if primary fails
 - `repo` — Repository to clone and work in
 
-## Message Format
+## Message format
 
 ```python
 messages = [
@@ -186,7 +186,7 @@ Valid roles: `system`, `user`, `assistant`
 - **Synchronous only** — `generate()` blocks until the complete response is ready
 - **5MB implicit limit** — Via platform constraints on response size
 
-## Why Host-Managed?
+## Why host-managed?
 
 Host-provided LLM calls are preferred over direct `openai`/`anthropic` usage even though agents run as native processes:
 
@@ -196,7 +196,7 @@ Host-provided LLM calls are preferred over direct `openai`/`anthropic` usage eve
 - **Audit logging** — All generation calls are logged
 - **Fallback models** — The host can automatically downgrade on rate-limit errors
 
-## See Also
+## See also
 
 - [How to Call LLMs](../how-to/call-llms.md) — Task-oriented guide
 - [AgentContext](agent-context.md) — Parent context object

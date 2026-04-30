@@ -108,9 +108,9 @@ cd packages/python
 pytest
 ```
 
-## Advanced Usage
+## Advanced usage
 
-### Custom Entry Points
+### Custom entry points
 
 If your agent file is not named `agent.py`, specify the entry point during registration:
 
@@ -126,7 +126,7 @@ curl -s -X POST http://localhost:8080/api/agents/register \
   -d '{"entrypoint": "/path/to/my-agent/main.py"}'
 ```
 
-### Direct Execution API
+### Direct execution API
 
 For CI/CD pipelines or automation, execute agents via the daemon API:
 

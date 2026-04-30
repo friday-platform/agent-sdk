@@ -4,9 +4,9 @@ Understanding the architecture behind Python agents in Friday.
 
 ## Overview
 
-Friday runs your Python agent as a native subprocess. When the platform needs to execute your agent, it spawns `python3 agent.py`, sends the prompt and context over an internal message broker, and collects the result. You don't manage the process or the broker — the SDK handles all the wire protocol. You write plain Python using the `@agent` decorator and `ctx` capabilities, and the SDK bridge connects, receives the execute request, builds the context, calls your handler, and returns the result.
+Friday runs your Python agent as a native subprocess. When the platform needs to execute your agent, it spawns `python3 agent.py`, sends the prompt and context over an internal message broker, and collects the result. You don't manage the process or the broker — the SDK handles the wire protocol. You write plain Python with the `@agent` decorator and `ctx` capabilities. The bridge connects to the host, waits for the execute request, builds the context, calls your handler, and returns the result.
 
-## What You Write
+## What you write
 
 Python code using the `@agent` decorator and `ctx` capabilities, ending with a `run()` call:
 
@@ -22,12 +22,12 @@ if __name__ == "__main__":
     run()
 ```
 
-The `run()` call at the bottom is the entry point. When Friday spawns your agent, it sets environment variables that `run()` detects:
+The `run()` call is the entry point. When Friday spawns your agent, it sets environment variables that `run()` detects:
 
 - **Registration mode** — publish metadata to the daemon, then exit
 - **Execution mode** — subscribe for a request, handle it, respond, then exit
 
-## What Happens When You Register
+## What happens when you register
 
 When you run `atlas agent register ./my-agent`:
 
@@ -37,7 +37,7 @@ When you run `atlas agent register ./my-agent`:
 
 No compilation, no transpilation. The source code is stored as-is.
 
-## What Happens At Execution
+## What happens at execution
 
 When Friday needs to run your agent:
 
@@ -48,9 +48,9 @@ When Friday needs to run your agent:
 5. **Respond** — Your `ok()`/`err()` result is serialized and sent back
 6. **Exit** — The agent process terminates (each execution is a fresh process)
 
-## Host Capabilities
+## Host capabilities
 
-All I/O routes through Friday so the platform can manage credentials, rate limits, audit logging, and provider routing centrally:
+All I/O goes through Friday. The platform manages credentials, rate limits, audit logging, and provider routing in one place:
 
 | Capability   | What It Does                                          | Why Through Friday                                           |
 | ------------ | ----------------------------------------------------- | ------------------------------------------------------------ |
@@ -60,7 +60,7 @@ All I/O routes through Friday so the platform can manage credentials, rate limit
 | `ctx.stream` | Emits progress updates to the Friday UI               | No direct UI access from subprocess                          |
 | `ctx.env`    | Reads environment variables you configure in `@agent` | Host injects vars; agent has no direct env access            |
 
-## The Contract
+## The contract
 
 Friday and your agent communicate via a simple JSON protocol over an internal message broker:
 
@@ -73,7 +73,7 @@ Friday and your agent communicate via a simple JSON protocol over an internal me
 
 Data crosses as JSON. Schemas evolve without interface version bumps.
 
-## SDK is a Runtime Dependency
+## SDK is a runtime dependency
 
 The `friday-agent-sdk` package is a **runtime dependency** installed into your Python environment. At execution time, your agent imports it like any other Python package. You can `pip install` additional pure-Python packages into the same environment.
 
@@ -91,7 +91,7 @@ This means:
 - **5MB HTTP response limit** — Matches Friday's platform webfetch limit
 - **Spawn-per-call** — Each execution starts a fresh process; keep startup lightweight
 
-## Iteration Workflow
+## Iteration workflow
 
 ```bash
 vim agent.py
@@ -109,7 +109,7 @@ curl -s -X POST http://localhost:5200/api/agents/my-agent/run \
 
 Friday resolves agent IDs to the latest semver version automatically. Re-register with a bumped version (`1.0.1`) to keep old iterations available.
 
-## See Also
+## See also
 
 - [Your First Friday Agent](../tutorial/your-first-agent.md) — Step-by-step walkthrough
 - [Agent Decorator](../reference/agent-decorator.md) — Metadata and registration parameters

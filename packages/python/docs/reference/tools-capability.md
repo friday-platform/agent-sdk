@@ -98,7 +98,7 @@ def execute(prompt, ctx):
     ...
 ```
 
-## Error Handling
+## Error handling
 
 ```python
 from friday_agent_sdk import ToolCallError, agent, err, ok
@@ -113,7 +113,7 @@ def execute(prompt, ctx):
     return ok({"result": result})
 ```
 
-## Finding Tools
+## Finding tools
 
 Filter by name pattern:
 
@@ -123,7 +123,7 @@ search_tools = [t for t in tools if "search" in t.name]
 git_tools = [t for t in tools if t.name.startswith("git")]
 ```
 
-## Dynamic Tool Selection
+## Dynamic tool selection
 
 ```python
 def execute(prompt, ctx):
@@ -145,7 +145,7 @@ def execute(prompt, ctx):
     return ok({"result": result})
 ```
 
-## Real Example: Time Operations
+## Real example: time operations
 
 ```python
 @agent(
@@ -187,7 +187,7 @@ def execute(prompt, ctx):
     })
 ```
 
-## Multiple MCP Servers
+## Multiple MCP servers
 
 Tools from all configured servers are merged into a single namespace:
 
@@ -208,7 +208,7 @@ def execute(prompt, ctx):
     ...
 ```
 
-## Tool Chaining
+## Tool chaining
 
 ```python
 def execute(prompt, ctx):
@@ -243,7 +243,7 @@ def execute(prompt, ctx):
     return ok({"analyzed": top_issue["title"]})
 ```
 
-## Schema Inspection
+## Schema inspection
 
 ```python
 tool = next(t for t in ctx.tools.list() if t.name == "create_issue")
@@ -257,7 +257,7 @@ for field in required:
     print(f"Required: {field} ({properties[field].get('type')})")
 ```
 
-## Common MCP Servers
+## Common MCP servers
 
 | Server     | Package                                   | Tools                                                     |
 | ---------- | ----------------------------------------- | --------------------------------------------------------- |
@@ -267,13 +267,13 @@ for field in required:
 | Filesystem | `@modelcontextprotocol/server-filesystem` | read_file, write_file, list_directory                     |
 | Fetch      | `@modelcontextprotocol/server-fetch`      | fetch (HTTP requests)                                     |
 
-## Transport Types
+## Transport types
 
 Currently supported: `stdio`
 
 Planned: `sse` (Server-Sent Events)
 
-## Environment Variables
+## Environment variables
 
 Reference agent environment in MCP server env:
 
@@ -306,7 +306,7 @@ Or configure agent environment separately:
 )
 ```
 
-## See Also
+## See also
 
 - [How to Use MCP Tools](../how-to/use-mcp-tools.md) — Task-oriented guide
 - [MCP specification](https://modelcontextprotocol.io/)

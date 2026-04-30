@@ -83,7 +83,7 @@ result = response.json()
 return ok({"created_id": result["id"]})
 ```
 
-## Error Handling
+## Error handling
 
 ```python
 from friday_agent_sdk import HttpError, agent, err, ok
@@ -150,7 +150,7 @@ content_type = response.headers.get("content-type", "")
 rate_limit = response.headers.get("x-ratelimit-remaining")
 ```
 
-## REST API Patterns
+## REST API patterns
 
 ```python
 base_url = "https://api.service.com/v1"
@@ -211,7 +211,7 @@ response = ctx.http.fetch(
 )
 ```
 
-## Query Parameters
+## Query parameters
 
 Construct URL with parameters:
 
@@ -225,17 +225,17 @@ url = f"https://api.example.com/search?{query}"
 response = ctx.http.fetch(url)
 ```
 
-## Response Body Limits
+## Response body limits
 
 - **5MB limit** enforced by platform
 - Exceeding returns truncated or error response
 - For large payloads, consider streaming (not yet available)
 
-## URL Allowlists
+## URL allowlists
 
 Not yet implemented. Currently all outbound HTTPS requests are allowed.
 
-## Why Not Use `requests` or `httpx`?
+## Why not use `requests` or `httpx`?
 
 You technically can — agents run as native Python processes, so installed packages work. But host-provided HTTP is still preferred:
 
@@ -247,6 +247,6 @@ You technically can — agents run as native Python processes, so installed pack
 
 Use `ctx.http.fetch()` for any I/O that needs production observability. Use `requests` only for internal tooling or debugging where host tracking isn't needed.
 
-## See Also
+## See also
 
 - [How to Make HTTP Requests](../how-to/make-http-requests.md) — Task-oriented guide

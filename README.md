@@ -4,6 +4,6 @@ Write AI agents in Python (and soon other languages) that run inside Friday's We
 
 **Full documentation:** https://platform.hellofriday.ai/docs/sdk/overview
 
-## Quick Start
+## Quick start
 
 See [`packages/python/README.md`](packages/python/README.md) to install the Python SDK and run your first agent.

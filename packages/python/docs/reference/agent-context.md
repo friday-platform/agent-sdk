@@ -1,6 +1,6 @@
 # AgentContext
 
-Execution context passed to agent handlers, providing access to environment, capabilities, and metadata.
+Execution context for agent handlers. Provides environment, capabilities, and metadata.
 
 ## Definition
 
@@ -126,7 +126,7 @@ Methods:
 
 See [ctx.stream](stream-capability.md).
 
-## Availability Guarantees
+## Availability guarantees
 
 | Field           | Guaranteed | Notes                                   |
 | --------------- | ---------- | --------------------------------------- |
@@ -139,7 +139,7 @@ See [ctx.stream](stream-capability.md).
 | `http`          | Yes        | Always initialized (stub in tests)      |
 | `stream`        | Yes        | Always initialized (stub in tests)      |
 
-## Defensive Programming
+## Defensive programming
 
 ```python
 from friday_agent_sdk import agent, ok, err
@@ -167,7 +167,7 @@ def execute(prompt, ctx):
     return ok({"result": result.text})
 ```
 
-## Context Round-Trip
+## Context round-trip
 
 All context fields survive the host-to-agent round trip:
 
@@ -179,7 +179,7 @@ All context fields survive the host-to-agent round trip:
 
 The `context-inspector` example agent demonstrates all fields survive this round-trip correctly.
 
-## See Also
+## See also
 
 - [ctx.llm](llm-capability.md) — LLM generation
 - [ctx.http](http-capability.md) — HTTP requests

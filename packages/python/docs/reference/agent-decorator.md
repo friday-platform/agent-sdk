@@ -25,7 +25,7 @@ def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
     ...
 ```
 
-## Required Parameters
+## Required parameters
 
 The registration API validates that all three are present. Missing any returns HTTP 400 with `"phase": "validate"`.
 
@@ -50,7 +50,7 @@ The registration API validates that all three are present. Missing any returns H
 - **Guidance:** Be specific about capabilities and use cases. 50-200 characters.
 - **Required:** Registration fails without this field.
 
-## Optional Parameters
+## Optional parameters
 
 ### `display_name`
 
@@ -97,7 +97,7 @@ examples=[
 - **Default:** `False`
 - **Description:** Whether the agent loads workspace skills before execution.
 
-## Environment Configuration
+## Environment configuration
 
 ### `environment`
 
@@ -124,7 +124,7 @@ environment={
 
 Access in agent code via `ctx.env["API_KEY"]`.
 
-## MCP Configuration
+## MCP configuration
 
 ### `mcp`
 
@@ -153,7 +153,7 @@ mcp={
 }
 ```
 
-## LLM Configuration
+## LLM configuration
 
 ### `llm`
 
@@ -167,9 +167,9 @@ llm={
 }
 ```
 
-Used when `ctx.llm.generate()` is called without explicit model. See [How to Call LLMs](../how-to/call-llms.md) for resolution cascade.
+Used when `ctx.llm.generate()` is called without explicit model. See [How to Call LLMs](../how-to/call-llms.md) for the resolution order.
 
-## Handler Function Signature
+## Handler function signature
 
 The decorated function receives:
 
@@ -183,7 +183,7 @@ def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
 - `prompt` — The enriched prompt string from Friday (includes task, context, temporal facts)
 - `ctx` — [AgentContext](agent-context.md) with capabilities and metadata
 
-### Return Types
+### Return types
 
 Return either:
 
@@ -191,7 +191,7 @@ Return either:
 - `ok(data, extras=AgentExtras(...))` — Success with metadata
 - `err(message)` — Failure with error message
 
-## Entry Point
+## Entry point
 
 Every agent file must end with a `run()` call:
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     run()
 ```
 
-## Registration Validation
+## Registration validation
 
 The registration pipeline validates metadata against a Zod schema. Validation errors return:
 
@@ -260,7 +260,7 @@ The registration pipeline validates metadata against a Zod schema. Validation er
 }
 ```
 
-## Version Semantics
+## Version semantics
 
 Agent versions follow [Semantic Versioning](https://semver.org/):
 
@@ -285,7 +285,7 @@ agents:
 
 Both versions remain on disk; rollback is possible by adjusting the workspace reference or re-registering with a downgraded version.
 
-## See Also
+## See also
 
 - [AgentContext](agent-context.md) — Execution context and capabilities
 - [Result types](result-types.md) — `ok()` and `err()` constructors
