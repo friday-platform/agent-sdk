@@ -25,6 +25,9 @@ from friday_agent_sdk import (
     # Decorator
     agent,
 
+    # Entry point
+    run,
+
     # Parsing
     parse_input,
     parse_operation,
@@ -48,9 +51,6 @@ from friday_agent_sdk import (
     # Streaming
     StreamEmitter,
 )
-
-# Required for WASM build — always import in agent modules
-from friday_agent_sdk._bridge import Agent
 ```
 
 ---
@@ -133,14 +133,13 @@ class AgentContext:
     config: dict                    # Agent-specific config from workspace (always present)
     session: SessionData | None     # Session metadata
     output_schema: dict | None      # JSON Schema from output_schema decorator param
-    tools: Tools | None             # MCP tool capability
-    llm: Llm | None                 # LLM generation capability
-    http: Http | None               # HTTP fetch capability
-    stream: StreamEmitter | None    # Progress streaming capability
+    tools: Tools                    # MCP tool capability (always initialized)
+    llm: Llm                        # LLM generation capability (always initialized)
+    http: Http                      # HTTP fetch capability (always initialized)
+    stream: StreamEmitter           # Progress streaming capability (always initialized)
 ```
 
-Only `env` and `config` are guaranteed non-None. All capabilities should be
-checked before use.
+`env` and `config` are guaranteed non-None. Capabilities are always initialized; they may be stubs in test contexts that raise `RuntimeError` if called without proper setup.
 
 ### SessionData
 

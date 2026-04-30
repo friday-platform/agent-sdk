@@ -3,34 +3,33 @@ name: writing-friday-python-agents
 description: >
   Write Python agents for the Friday platform using the friday-agent-sdk.
   Covers the @agent decorator, AgentContext capabilities (ctx.llm, ctx.http,
-  ctx.tools, ctx.stream), structured input parsing, result types, WASM sandbox
-  constraints, and getting agents into Friday. Use this skill whenever writing,
-  editing, debugging, or reviewing a Friday Python agent — including when you
-  see imports from friday_agent_sdk, when working in an agents/ directory with
-  agent.py files, when the user mentions "Friday agent", "custom agent",
-  "Python agent", or "WASM agent", or when creating any agent that will run on
-  the Friday platform. Even if the user doesn't explicitly mention the SDK,
-  load this skill if the context suggests they're building something that will
-  run as a Friday agent.
+  ctx.tools, ctx.stream), structured input parsing, result types, the NATS
+  subprocess execution model, and getting agents into Friday. Use this skill
+  whenever writing, editing, debugging, or reviewing a Friday Python agent —
+  including when you see imports from friday_agent_sdk, when working in an
+  agents/ directory with agent.py files, when the user mentions "Friday agent",
+  "custom agent", "Python agent", or "NATS agent", or when creating any agent
+  that will run on the Friday platform. Even if the user doesn't explicitly
+  mention the SDK, load this skill if the context suggests they're building
+  something that will run as a Friday agent.
 ---
 
 # Writing Friday Python Agents
 
-Friday agents are single-file Python modules that compile to WebAssembly and run
-in a sandboxed environment. The SDK is a compile-time dependency — it gets baked
-into the WASM binary. There are no runtime dependencies.
+Friday agents are single-file Python modules that the platform spawns as native
+subprocesses and communicates with via NATS. The SDK is a normal Python package
+installed into your environment. There are no compile-time or WASM steps.
 
-The mental model: your Python code runs inside a WASM sandbox with no filesystem,
-no network, no native extensions. All I/O happens through **host capabilities**
-the platform provides — LLM generation, HTTP requests, MCP tools, and progress
+The mental model: your Python code runs as a normal process. All I/O that crosses
+network boundaries or needs credentials routes through **host capabilities** the
+platform provides — LLM generation, HTTP requests, MCP tools, and progress
 streaming. You declare what you need in the `@agent` decorator, and the platform
 wires it up at execution time via `AgentContext`.
 
 ## Every Agent Looks Like This
 
 ```python
-from friday_agent_sdk import agent, ok, AgentContext
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — required for componentize-py
+from friday_agent_sdk import agent, ok, AgentContext, run
 
 @agent(
     id="my-agent",
@@ -40,21 +39,24 @@ from friday_agent_sdk._bridge import Agent  # noqa: F401 — required for compon
 def execute(prompt: str, ctx: AgentContext):
     # Your logic here
     return ok({"result": "data"})
+
+if __name__ == "__main__":
+    run()
 ```
 
 Three things are non-negotiable:
 
-1. **The `Agent` import** — `from friday_agent_sdk._bridge import Agent` must be
-   present even though you never reference `Agent` directly. componentize-py
-   discovers this class to generate the WASM exports. Without it, the build fails.
-2. **The `@agent` decorator** with at least `id`, `version`, `description`.
+1. **The `@agent` decorator** with at least `id`, `version`, `description`.
+2. **`run()` in `__main__`** — this is the NATS entry point. Without it, the
+   process spawns and immediately exits. `run()` checks `FRIDAY_VALIDATE_ID`
+   (registration) or `FRIDAY_SESSION_ID` (execution), connects to NATS, and
+   handles the protocol.
 3. **Return `ok()` or `err()`** — never return raw dicts/strings.
 
 ## Capabilities Quick Reference
 
-All capabilities live on `AgentContext` and may be `None` if not wired up.
-Check before using, or declare what you need in the decorator so the platform
-provides it.
+All capabilities live on `AgentContext` and are always initialized. They may be
+stubs in test contexts, but never `None`.
 
 | Capability  | Access        | What it does                                              |
 | ----------- | ------------- | --------------------------------------------------------- |
@@ -104,7 +106,7 @@ data = response.json()  # convenience method
 # response.status (int), response.headers (dict), response.body (str)
 ```
 
-The host handles TLS — the sandbox can't import `ssl`. 5MB response body limit.
+The host handles TLS, audit logging, and rate limits. 5MB response body limit.
 Note: HTTP status errors (4xx, 5xx) don't raise — check `response.status` manually.
 
 ### ctx.tools — MCP Tools
@@ -142,7 +144,6 @@ ctx.stream.emit("custom-event", {"key": "value"})  # raw event
 ```
 
 Emit progress _before_ expensive operations so the UI shows what's happening.
-Note: `ctx.stream` may be `None` — check before calling.
 
 ## Structured Input Handling
 
@@ -223,61 +224,67 @@ return err("Jira API returned 403: insufficient permissions")
 `ok()` accepts any JSON-serializable data: dicts, lists, strings, dataclass
 instances (auto-converted via `dataclasses.asdict`).
 
-## The WASM Sandbox — What You Cannot Do
+## The Execution Model — What You Cannot Do (And Why)
 
-This is the single most important thing to internalize. The agent runs inside a
-WebAssembly sandbox with only the Python standard library available.
+Your agent runs as a normal Python subprocess, so the standard library and most
+installed packages work. The constraint is not a sandbox — it's that I/O should
+route through host capabilities so the platform manages credentials, rate limits,
+and audit logging centrally.
 
-**Blocked — will fail at build time or runtime:**
+**Recommended — use host capabilities for I/O:**
 
-- `import requests`, `import httpx` — use `ctx.http.fetch()` instead
-- `import pydantic` — use `dataclasses` instead (pydantic-core is a Rust C extension)
-- `import numpy`, `import pandas` — native C extensions, blocked
-- `import ssl`, `import socket` — networking handled by host
-- `import anthropic`, `import openai` — use `ctx.llm.generate()` instead
-- Any package with native/C extensions
-- File system access (`open()`, `pathlib`) — no filesystem in sandbox
-- Subprocess/threading — single-threaded WASM execution
+- `ctx.http.fetch()` instead of `requests`/`httpx` — host manages TLS, logging, limits
+- `ctx.llm.generate()` instead of `anthropic`/`openai` — host manages API keys, routing
+- `ctx.tools.call()` instead of direct API calls — MCP servers run centrally
+- `ctx.stream.progress()` instead of `print()` — UI integration, not stdout
+- `ctx.env` instead of `os.environ` — only declared variables are injected
 
-**Available — Python standard library works:**
+**Available — Python standard library and installed packages:**
 
 - `json`, `re`, `base64`, `urllib.parse`, `dataclasses`
 - `collections`, `itertools`, `functools`, `typing`
 - `math`, `datetime`, `uuid`, `hashlib`
-- Pure-Python third-party packages (rare — most useful ones have native deps)
+- `pydantic` if installed, `numpy` if installed, etc.
 
-When in doubt: if a package appears in PyPI with C extensions or Rust bindings,
-it won't work. Stick to stdlib + the SDK's host capabilities.
+When in doubt: if the operation touches a network boundary or needs credentials,
+use the host capability. If it's pure data manipulation, standard library or
+installed packages are fine.
 
 ## Getting Agents Into Friday
 
-### Docker Compose (recommended for development)
+### CLI (recommended)
 
-Place your agent in the `agents/` directory:
-
-```
-agents/
-  my-agent/
-    agent.py
-```
-
-Docker Compose watches this directory. Restart the platform to pick up changes:
+Register your agent from its directory:
 
 ```bash
-docker compose restart platform
+atlas agent register ./my-agent
 ```
 
-### CLI
+Your agent directory should contain at minimum an `agent.py` file. If the entry
+point has a different name, specify it:
 
 ```bash
-# Build an agent
-atlas agent build ./agents/my-agent/agent.py
+atlas agent register ./my-agent --entry main.py
+```
 
-# Reload the agent registry (after editing)
-curl -X POST http://localhost:8080/api/agents/reload
+The daemon spawns the entry point with `FRIDAY_VALIDATE_ID`, collects metadata
+over NATS, copies the source directory to `~/.friday/local/agents/{id}@{version}/`,
+and reloads the registry.
 
-# Test directly
+### Test directly
+
+Execute an agent without going through the full FSM pipeline:
+
+```bash
 atlas agent exec my-agent -i "test prompt"
+```
+
+Or via the playground API:
+
+```bash
+curl -s -X POST http://localhost:5200/api/agents/my-agent/run \
+  -H 'Content-Type: application/json' \
+  -d '{"input": "test prompt"}'
 ```
 
 ### Workspace Configuration
@@ -289,6 +296,9 @@ agents:
   - id: my-agent
     type: user
 ```
+
+Friday adds the `user:` prefix automatically — you specify `my-agent`,
+Friday resolves it to `user:my-agent`.
 
 ## Casing Convention
 
@@ -311,5 +321,5 @@ For deeper dives, read these reference files:
   context field, every method signature and return type
 - **`references/examples.md`** — Annotated example agents from simple (echo) to
   complex (Jira multi-operation, GitHub PR operations)
-- **`references/constraints.md`** — Full list of WASM constraints, casing rules,
+- **`references/constraints.md`** — Full list of constraints, casing rules,
   build pipeline details, and common mistakes with fixes

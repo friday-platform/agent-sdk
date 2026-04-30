@@ -25,9 +25,9 @@ def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
     ...
 ```
 
-## Required Parameters
+## Required parameters
 
-The build API validates that all three are present. Missing any returns HTTP 400 with `"phase": "validate"`.
+The registration API validates that all three are present. Missing any returns HTTP 400 with `"phase": "validate"`.
 
 ### `id`
 
@@ -48,9 +48,9 @@ The build API validates that all three are present. Missing any returns HTTP 400
 - **Type:** `str`
 - **Description:** What the agent does. Used by the planner for delegation decisions.
 - **Guidance:** Be specific about capabilities and use cases. 50-200 characters.
-- **Required:** Build fails without this field.
+- **Required:** Registration fails without this field.
 
-## Optional Parameters
+## Optional parameters
 
 ### `display_name`
 
@@ -97,7 +97,7 @@ examples=[
 - **Default:** `False`
 - **Description:** Whether the agent loads workspace skills before execution.
 
-## Environment Configuration
+## Environment configuration
 
 ### `environment`
 
@@ -124,7 +124,7 @@ environment={
 
 Access in agent code via `ctx.env["API_KEY"]`.
 
-## MCP Configuration
+## MCP configuration
 
 ### `mcp`
 
@@ -153,7 +153,7 @@ mcp={
 }
 ```
 
-## LLM Configuration
+## LLM configuration
 
 ### `llm`
 
@@ -167,9 +167,9 @@ llm={
 }
 ```
 
-Used when `ctx.llm.generate()` is called without explicit model. See [How to Call LLMs](../how-to/call-llms.md) for resolution cascade.
+Used when `ctx.llm.generate()` is called without explicit model. See [How to Call LLMs](../how-to/call-llms.md) for the resolution order.
 
-## Handler Function Signature
+## Handler function signature
 
 The decorated function receives:
 
@@ -183,7 +183,7 @@ def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
 - `prompt` — The enriched prompt string from Friday (includes task, context, temporal facts)
 - `ctx` — [AgentContext](agent-context.md) with capabilities and metadata
 
-### Return Types
+### Return types
 
 Return either:
 
@@ -191,11 +191,27 @@ Return either:
 - `ok(data, extras=AgentExtras(...))` — Success with metadata
 - `err(message)` — Failure with error message
 
+## Entry point
+
+Every agent file must end with a `run()` call:
+
+```python
+from friday_agent_sdk import agent, ok, run
+
+@agent(id="my-agent", version="1.0.0", description="...")
+def execute(prompt, ctx):
+    return ok("hello")
+
+if __name__ == "__main__":
+    run()
+```
+
+`run()` connects to the daemon's message broker, handles the registration or execution handshake, and exits when done. Without it, the agent process spawns and immediately exits.
+
 ## Example
 
 ```python
-from friday_agent_sdk import agent, ok, err, AgentContext
-from friday_agent_sdk._bridge import Agent
+from friday_agent_sdk import agent, ok, err, AgentContext, run
 
 @agent(
     id="code-analyzer",
@@ -227,21 +243,14 @@ from friday_agent_sdk._bridge import Agent
 def execute(prompt: str, ctx: AgentContext):
     # Implementation
     return ok({"issues": []})
+
+if __name__ == "__main__":
+    run()
 ```
 
-## Bridge Import
+## Registration validation
 
-Always import the `Agent` class from `_bridge` so `componentize-py` can generate the WIT exports:
-
-```python
-from friday_agent_sdk._bridge import Agent  # noqa: F401
-```
-
-This import is unused in your code but required by the WASM compiler.
-
-## Build Validation
-
-The build pipeline validates metadata against `CreateAgentConfigValidationSchema` (Zod schema). Validation errors return:
+The registration pipeline validates metadata against a Zod schema. Validation errors return:
 
 ```json
 {
@@ -251,7 +260,7 @@ The build pipeline validates metadata against `CreateAgentConfigValidationSchema
 }
 ```
 
-## Version Semantics
+## Version semantics
 
 Agent versions follow [Semantic Versioning](https://semver.org/):
 
@@ -261,12 +270,12 @@ Agent versions follow [Semantic Versioning](https://semver.org/):
 
 Friday resolves agent references to the latest semver version:
 
-```python
-# Build v1.0.0
-curl -F "files=@agent.py" ...  # version="1.0.0"
+```bash
+# Register v1.0.0
+atlas agent register ./my-agent  # version="1.0.0"
 
-# Build v1.0.1
-curl -F "files=@agent.py" ...  # version="1.0.1"
+# Register v1.0.1
+atlas agent register ./my-agent  # version="1.0.1"
 
 # Reference in workspace.yml
 agents:
@@ -274,9 +283,9 @@ agents:
     type: user
 ```
 
-Both versions remain on disk; rollback is possible by adjusting the workspace reference or rebuilding with a downgraded version.
+Both versions remain on disk; rollback is possible by adjusting the workspace reference or re-registering with a downgraded version.
 
-## See Also
+## See also
 
 - [AgentContext](agent-context.md) — Execution context and capabilities
 - [Result types](result-types.md) — `ok()` and `err()` constructors

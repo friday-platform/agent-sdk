@@ -4,7 +4,7 @@ Emit progress events that appear in Friday's UI during long-running operations.
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## Basic Progress Emission
+## Basic progress emission
 
 ```python
 from friday_agent_sdk import agent, ok
@@ -25,9 +25,7 @@ def execute(prompt, ctx):
     return ok({"data": data})
 ```
 
-Progress appears in the Friday UI as streaming updates while your agent runs.
-
-## Intent Emission
+## Intent emission
 
 Emit high-level intents for significant state changes:
 
@@ -43,7 +41,7 @@ ctx.stream.intent("Identifying issues")
 ctx.stream.intent("Generating report")
 ```
 
-## With Tool Context
+## With tool context
 
 Associate progress with specific tools:
 
@@ -59,7 +57,7 @@ ctx.stream.progress("Analyzing code patterns", tool_name="Analyzer")
 ctx.stream.progress("Creating summary", tool_name="Reporter")
 ```
 
-## Real Example: Multi-Phase Agent
+## Real example: multi-phase agent
 
 ```python
 from friday_agent_sdk import agent, ok, AgentExtras
@@ -92,7 +90,7 @@ def execute(prompt, ctx):
     })
 ```
 
-## When to Emit
+## When to emit
 
 Emit progress when:
 
@@ -107,38 +105,35 @@ Do not emit:
 - For trivial operations (< 100ms)
 - Excessively verbose detail ("Step 1 of 50", "Step 2 of 50"...)
 
-## Emission During JSPI Calls
+## Emitting during long operations
 
-Progress emits happen synchronously — they do not suspend the WASM JSPI context. This means you can emit progress while the host is processing an LLM call:
+`ctx.stream.progress()` returns immediately — it does not wait for the host to process the event. This means you can emit progress before expensive operations and the UI updates right away:
 
 ```python
 ctx.stream.progress("Starting LLM call...")
 
-# This suspends via JSPI — progress was already sent
+# This blocks until the full response is ready
 result = ctx.llm.generate(messages, model="claude-sonnet-4-6")
 
-# Host may have emitted its own progress during the suspend
-# Now we're back in Python
+# Back in your code — emit the next update
 ctx.stream.progress("LLM complete, processing...")
 ```
 
-## Fallback When Stream Unavailable
+## Fallback when stream unavailable
 
-The `ctx.stream` field may be `None` in test contexts. Handle gracefully:
+In test contexts without a host, `ctx.stream` is a no-op stub that safely ignores calls. You can call it unconditionally:
 
 ```python
-if ctx.stream:
-    ctx.stream.progress("Working...")
+ctx.stream.progress("Working...")  # Safe even in tests
 
-# Or use a helper
+# Or use a helper for consistency
 def progress(ctx, msg):
-    if ctx.stream:
-        ctx.stream.progress(msg)
+    ctx.stream.progress(msg)
 
 progress(ctx, "Starting...")
 ```
 
-## Raw Event Emission
+## Raw event emission
 
 For custom event types, use `emit()`:
 
@@ -148,7 +143,7 @@ ctx.stream.emit("custom-event", {"phase": "validation", "count": 42})
 
 The `data` parameter accepts either a dict (JSON-serialised) or string.
 
-## See Also
+## See also
 
 - [API reference: ctx.stream](../reference/stream-capability.md)
-- [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging details
+- [How Friday Agents Work](../explanation/how-agents-work.md) — NATS subprocess protocol details

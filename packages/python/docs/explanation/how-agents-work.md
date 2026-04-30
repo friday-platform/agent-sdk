@@ -1,98 +1,115 @@
 # How Friday Agents Work
 
-Understanding the architecture behind Python agents in Friday's WebAssembly sandbox.
+Understanding the architecture behind Python agents in Friday.
 
 ## Overview
 
-Friday runs your Python agent in a WebAssembly (WASM) sandbox. Your code compiles to a portable WASM component, which Friday loads and executes. The sandbox provides security and isolation: your agent cannot access the filesystem, network, or environment directly. Instead, Friday provides **host capabilities** — platform functions your agent calls for I/O operations.
+Friday runs your Python agent as a native subprocess. When the platform needs to execute your agent, it spawns `python3 agent.py`, sends the prompt and context over an internal message broker, and collects the result. You don't manage the process or the broker — the SDK handles the wire protocol. You write plain Python with the `@agent` decorator and `ctx` capabilities. The bridge connects to the host, waits for the execute request, builds the context, calls your handler, and returns the result.
 
-## What You Write
+## What you write
 
-Python code using the `@agent` decorator and `ctx` capabilities:
+Python code using the `@agent` decorator and `ctx` capabilities, ending with a `run()` call:
 
 ```python
-from friday_agent_sdk import agent, ok
+from friday_agent_sdk import agent, ok, run
 
 @agent(id="my-agent", version="1.0.0", description="Does something")
 def execute(prompt, ctx):
     result = ctx.llm.generate(messages, model="anthropic:claude-sonnet-4-6")
     return ok({"output": result.text})
+
+if __name__ == "__main__":
+    run()
 ```
 
-## What Happens When You Build
+The `run()` call is the entry point. When Friday spawns your agent, it sets environment variables that `run()` detects:
 
-When you run `atlas agent build ./agent.py`:
+- **Registration mode** — publish metadata to the daemon, then exit
+- **Execution mode** — subscribe for a request, handle it, respond, then exit
 
-1. **Compile** — `componentize-py` bundles your Python with a CPython interpreter into a `.wasm` file
-2. **Transpile** — `jco` converts the WASM to a JavaScript module Friday can load
-3. **Validate** — Friday checks your `@agent` metadata against its schema
-4. **Store** — Files written to Friday's agent directory, discoverable via the API
+## What happens when you register
 
-All of this happens inside the Friday daemon's Docker container. You do not need `componentize-py` or `jco` installed locally.
+When you run `atlas agent register ./my-agent`:
 
-## Host Capabilities
+1. **Validate** — The daemon spawns your agent in registration mode. It publishes metadata (id, version, description, etc.) and exits.
+2. **Store** — The daemon copies your source directory to `~/.friday/local/agents/{id}@{version}/` and writes a `metadata.json` sidecar.
+3. **Reload** — The agent registry picks up the new agent.
 
-Your agent runs in an isolated sandbox. To do anything useful, it calls through Friday:
+No compilation, no transpilation. The source code is stored as-is.
 
-| Capability   | What It Does                                          | Why Not Direct                                                       |
-| ------------ | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `ctx.llm`    | Routes LLM calls through Friday's provider registry   | `anthropic`/`openai` packages need native extensions blocked by WASM |
-| `ctx.http`   | Makes HTTP requests via Friday's fetch layer          | Python `ssl` module unavailable in WASM                              |
-| `ctx.tools`  | Calls MCP tools running in the host                   | MCP servers run outside the sandbox                                  |
-| `ctx.stream` | Emits progress updates to the Friday UI               | No direct UI access from sandbox                                     |
-| `ctx.env`    | Reads environment variables you configure in `@agent` | No host environment access                                           |
+## What happens at execution
 
-## The Contract
+When Friday needs to run your agent:
 
-Friday and your agent communicate via a WIT interface. Key points:
+1. **Spawn** — `python3 agent.py` is launched with execution environment variables
+2. **Signal ready** — The SDK connects to the daemon's message broker and signals it's ready to receive a request
+3. **Receive** — The daemon sends the prompt and context as JSON
+4. **Handle** — The SDK builds `AgentContext` from the raw dict and calls your `@agent` function
+5. **Respond** — Your `ok()`/`err()` result is serialized and sent back
+6. **Exit** — The agent process terminates (each execution is a fresh process)
 
-- Your agent **exports** `get-metadata()` and `execute()` — the `@agent` decorator handles this
-- Friday **imports** capabilities your agent can call — accessed via `ctx`
-- Data crosses as JSON strings — schemas evolve without interface version bumps
+## Host capabilities
 
-The complete contract is in [`packages/wit/agent.wit`](../../../../packages/wit/agent.wit).
+All I/O goes through Friday. The platform manages credentials, rate limits, audit logging, and provider routing in one place:
 
-## SDK is Compile-Time Only
+| Capability   | What It Does                                          | Why Through Friday                                           |
+| ------------ | ----------------------------------------------------- | ------------------------------------------------------------ |
+| `ctx.llm`    | Routes LLM calls through Friday's provider registry   | Host manages API keys, rate limits, model routing            |
+| `ctx.http`   | Makes HTTP requests via Friday's fetch layer          | Host handles TLS termination, audit logging, response limits |
+| `ctx.tools`  | Calls MCP tools running in the host                   | MCP servers run outside the agent process                    |
+| `ctx.stream` | Emits progress updates to the Friday UI               | No direct UI access from subprocess                          |
+| `ctx.env`    | Reads environment variables you configure in `@agent` | Host injects vars; agent has no direct env access            |
 
-The `friday-agent-sdk` package is a **compile-time dependency only**. It is baked into your `.wasm` file by `componentize-py`. At runtime, your agent runs in a pure Python environment with zero external dependencies.
+## The contract
+
+Friday and your agent communicate via a simple JSON protocol over an internal message broker:
+
+- **Agent publishes** metadata during registration
+- **Agent signals ready** before each execution
+- **Daemon sends** `{prompt, context}` JSON
+- **Agent responds** with `{tag: "ok" | "err", val: string}` envelope
+- **Agent publishes** stream events (progress, intents) during execution
+- **Daemon handles** LLM calls, HTTP requests, and MCP tool calls on behalf of the agent
+
+Data crosses as JSON. Schemas evolve without interface version bumps.
+
+## SDK is a runtime dependency
+
+The `friday-agent-sdk` package is a **runtime dependency** installed into your Python environment. At execution time, your agent imports it like any other Python package. You can `pip install` additional pure-Python packages into the same environment.
 
 This means:
 
-- You cannot `pip install` packages into the sandbox
-- Only Python standard library is available
-- All I/O goes through host capabilities
+- You **can** `pip install` packages into the agent environment
+- Native C extensions work (NumPy, Pydantic, etc.) if the environment has them
+- All I/O still goes through host capabilities for audit and credential management
+- The agent is a normal Python process — no sandbox
 
 ## Limitations
 
-- **No native extensions** — NumPy, Pydantic, etc. cannot compile to WASM
-- **No streaming LLM responses** — Requires WASI 0.3 (expected late 2026)
-- **One agent per file** — Each `.py` builds to one WASM component
-- **5MB HTTP response limit** — Matches Friday's platform limits
+- **No streaming LLM responses** — `ctx.llm.generate()` blocks until the full response is ready
+- **One agent per file** — Each `.py` registers exactly one `@agent`
+- **5MB HTTP response limit** — Matches Friday's platform webfetch limit
+- **Spawn-per-call** — Each execution starts a fresh process; keep startup lightweight
 
-## Iteration Workflow
-
-With the Friday CLI:
+## Iteration workflow
 
 ```bash
 vim agent.py
-atlas agent build ./agent.py
+atlas agent register ./my-agent
 atlas agent exec my-agent -i "test input"
 ```
 
-With Docker Compose, place your source in `agents/` and restart:
+Or test directly against the playground:
 
 ```bash
-vim agents/my-agent/agent.py
-docker compose restart platform
-atlas agent exec my-agent -i "test input" --url http://localhost:15200
+curl -s -X POST http://localhost:5200/api/agents/my-agent/run \
+  -H 'Content-Type: application/json' \
+  -d '{"input": "test prompt"}'
 ```
 
-The daemon rebuilds every agent in `agents/` on startup.
+Friday resolves agent IDs to the latest semver version automatically. Re-register with a bumped version (`1.0.1`) to keep old iterations available.
 
-Friday resolves agent IDs to the latest semver version automatically. Rebuild with a bumped version (`1.0.1`) to keep old iterations available.
-
-## See Also
+## See also
 
 - [Your First Friday Agent](../tutorial/your-first-agent.md) — Step-by-step walkthrough
-- [WIT contract](../../../../packages/wit/agent.wit) — Complete interface specification
-- [componentize-py](https://github.com/bytecodealliance/componentize-py) — Python-to-WASM compiler
+- [Agent Decorator](../reference/agent-decorator.md) — Metadata and registration parameters

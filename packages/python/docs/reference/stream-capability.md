@@ -68,9 +68,9 @@ ctx.stream.intent("Identifying security issues")
 ctx.stream.intent("Generating recommendations")
 ```
 
-## Common Usage Patterns
+## Common usage patterns
 
-### Phase-Based Progress
+### Phase-based progress
 
 ```python
 def execute(prompt, ctx):
@@ -87,7 +87,7 @@ def execute(prompt, ctx):
     return ok({"result": analysis.text})
 ```
 
-### Intent for State Changes
+### Intent for state changes
 
 ```python
 def execute(prompt, ctx):
@@ -106,7 +106,7 @@ def execute(prompt, ctx):
     return ok({"completed": True})
 ```
 
-### Tool-Associated Progress
+### Tool-associated progress
 
 ```python
 def execute(prompt, ctx):
@@ -125,42 +125,35 @@ def execute(prompt, ctx):
     return ok({"count": len(processed)})
 ```
 
-### Fallback When Unavailable
+### Fallback when unavailable
 
-`ctx.stream` may be `None` in test contexts:
+In test contexts without a host, `ctx.stream` is a no-op stub that safely ignores calls. You can call it unconditionally:
 
 ```python
 def execute(prompt, ctx):
-    # Safe wrapper
-    def progress(msg, tool=None):
-        if ctx.stream:
-            ctx.stream.progress(msg, tool_name=tool)
-
-    progress("Starting...")
+    ctx.stream.progress("Starting...")
 
     # Work...
 
-    progress("Complete")
+    ctx.stream.progress("Complete")
     return ok({"done": True})
 ```
 
-## Emission During JSPI
+## Emitting during long operations
 
-Progress emits happen synchronously before JSPI suspension:
+`ctx.stream.progress()` returns immediately — it does not wait for the host to process the event. Emit before expensive operations so the UI updates right away:
 
 ```python
 ctx.stream.progress("Starting LLM call...")  # Sent immediately
 
-# Suspends via JSPI while host processes LLM request
+# This blocks until the full response is ready
 result = ctx.llm.generate(messages, model="claude-sonnet-4-6")
 
-# Back in Python
+# Back in your code — emit the next update
 ctx.stream.progress("LLM complete")  # Sent now
 ```
 
-The host may emit its own progress events during the suspension.
-
-## Event Types
+## Event types
 
 Standard types used by Friday:
 
@@ -172,16 +165,16 @@ Standard types used by Friday:
 
 Custom types can be emitted via `emit()` but may not have UI handlers.
 
-## Best Practices
+## Best practices
 
 - **Emit before expensive operations** — Warn users before long LLM calls
 - **Use tool_name for grouping** — Helps UI organize progress by component
 - **Keep messages concise** — 50-100 characters ideal for UI display
 - **Avoid tight loop emission** — Batch or debounce high-frequency updates
 - **Prefer intent for phases, progress for detail** — Two-level hierarchy
-- **Handle missing capability gracefully** — `ctx.stream` may be None
+- **Safe to call unconditionally** — `ctx.stream` is always initialized (stub in tests)
 
-## When to Emit
+## When to emit
 
 | Scenario           | Method                    | Example                            |
 | ------------------ | ------------------------- | ---------------------------------- |
@@ -191,7 +184,7 @@ Custom types can be emitted via `emit()` but may not have UI handlers.
 | Fallback scenarios | `progress()`              | "Retrying with alternate model..." |
 | Completion         | `intent()`                | "Analysis complete"                |
 
-## See Also
+## See also
 
 - [How to Stream Progress](../how-to/stream-progress.md) — Task-oriented guide
-- [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging
+- [How Friday Agents Work](../explanation/how-agents-work.md) — NATS subprocess protocol

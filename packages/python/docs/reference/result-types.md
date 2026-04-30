@@ -56,8 +56,10 @@ def execute(prompt, ctx):
     if "API_KEY" not in ctx.env:
         return err("API_KEY not set. Connect the provider in Friday Link.")
 
-    if ctx.llm is None:
-        return err("LLM capability not available in this context.")
+    try:
+        result = ctx.llm.generate(...)
+    except Exception as e:
+        return err(f"LLM call failed: {e}")
 
     return ok({"status": "ready"})
 ```
@@ -101,7 +103,7 @@ class ErrResult:
 
 The `error` message is passed through to the host and displayed to the user.
 
-## Tagged Union Pattern
+## Tagged union pattern
 
 `OkResult` and `ErrResult` are distinct types. It is impossible to:
 
@@ -121,21 +123,26 @@ def handle(result: AgentResult):
 
 ## Serialisation
 
-The bridge converts results to the WIT `agent-result` variant:
+`ok()` serialises `data` to JSON and wraps it in a tagged envelope:
 
-```wit
-variant agent-result {
-    ok(string),   // JSON-serialised ok.data
-    err(string),  // err.error message
-}
+```json
+{ "tag": "ok", "val": "{\"answer\": 42}" }
 ```
 
-## Best Practices
+`err()` wraps the error message directly:
+
+```json
+{ "tag": "err", "val": "Something broke" }
+```
+
+The SDK handles this automatically — you only work with `ok()` and `err()` in agent code.
+
+## Best practices
 
 - **Return structured data** — Dicts with clear field names, not raw strings
 - **Handle errors early** — Validate `ctx.env`, check capabilities, return `err()` with clear messages
 
-## Common Error Messages
+## Common error messages
 
 | Scenario            | Message                                                 |
 | ------------------- | ------------------------------------------------------- |
@@ -145,6 +152,6 @@ variant agent-result {
 | Invalid input       | `"Invalid request: {reason}"`                           |
 | Timeout             | `"Operation timed out after {duration}"`                |
 
-## See Also
+## See also
 
 - [How to Stream Progress](../how-to/stream-progress.md) — Real-time updates during execution

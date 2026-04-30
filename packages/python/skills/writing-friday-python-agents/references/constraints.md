@@ -1,8 +1,8 @@
-# WASM Constraints, Casing Rules, and Common Mistakes
+# Agent Constraints, Casing Rules, and Common Mistakes
 
 ## Table of Contents
 
-- [WASM Sandbox Constraints](#wasm-sandbox-constraints)
+- [Environment and Extension Guidance](#environment-and-extension-guidance)
 - [Casing Rules](#casing-rules)
 - [Build Pipeline](#build-pipeline)
 - [Common Mistakes and Fixes](#common-mistakes-and-fixes)
@@ -11,45 +11,45 @@
 
 ---
 
-## WASM Sandbox Constraints
+## Environment and Extension Guidance
 
 ### What's available
 
-The Python standard library works. If a module is pure stdlib (`json`, `re`,
-`dataclasses`, `collections`, `datetime`, `uuid`, `base64`, `urllib.parse`,
-etc.), it's safe to use.
+The full Python environment is available. The `friday-agent-sdk` and the Python standard library work out of the box. You can also `pip install` additional pure-Python packages.
 
-### What's blocked
+Native C extensions work too if the Python environment has the required libraries:
 
-Anything that touches the OS, network, or has native C/Rust extensions:
+| Available                                    | Notes                                           |
+| -------------------------------------------- | ----------------------------------------------- |
+| `json`, `re`, `dataclasses`, `collections`   | Standard library — always safe                  |
+| `datetime`, `uuid`, `base64`, `urllib.parse` | Standard library — always safe                  |
+| `pydantic`                                   | Works if pydantic-core is installed natively    |
+| `numpy`, `pandas`                            | Work if compiled libraries are present          |
+| `requests`, `httpx`, `urllib.request`        | Technically possible — but discouraged          |
+| `ssl`, `socket`                              | Technically possible — but discouraged          |
+| `subprocess`, `os.system`                    | Technically possible — but strongly discouraged |
 
-| Blocked                               | Why                        | Alternative                           |
-| ------------------------------------- | -------------------------- | ------------------------------------- |
-| `requests`, `httpx`, `urllib.request` | Network access blocked     | `ctx.http.fetch()`                    |
-| `anthropic`, `openai`                 | pydantic-core (Rust C ext) | `ctx.llm.generate()`                  |
-| `pydantic`                            | pydantic-core (Rust C ext) | `dataclasses`                         |
-| `numpy`, `pandas`, `scipy`            | C extensions               | Process data on host side             |
-| `ssl`, `socket`                       | Network primitives         | Host handles TLS                      |
-| `subprocess`, `os.system`             | No process spawning        | `ctx.tools.call("bash", ...)` via MCP |
-| `threading`, `multiprocessing`        | Single-threaded WASM       | Sequential execution                  |
-| `open()`, `pathlib`, `os.path`        | No filesystem              | Data via prompt/HTTP/tools            |
-| `sqlite3`                             | Native library             | Use MCP database tools                |
-| `PIL/Pillow`                          | C extensions               | Process images via HTTP API           |
-| `aiohttp`, `asyncio`                  | No async in WASM yet       | Synchronous SDK calls                 |
+### Why host capabilities are still recommended
+
+Even though native extensions work, you should still use `ctx.llm`, `ctx.http`, and `ctx.tools` for I/O:
+
+| Use Host Capability Instead Of    | Reason                                                     |
+| --------------------------------- | ---------------------------------------------------------- |
+| `ctx.http.fetch()` vs `requests`  | Host manages TLS, audit logging, rate limits, 5MB cap      |
+| `ctx.llm.generate()` vs `openai`  | Host manages API keys, provider routing, token quotas      |
+| `ctx.tools.call()` vs direct API  | MCP servers run centrally; credentials managed by host     |
+| `ctx.stream.progress()` vs prints | UI integration; no direct stdout access in production      |
+| `ctx.env` vs `os.environ`         | Only variables declared in `@agent` decorator are injected |
 
 ### The rule of thumb
 
-If `pip install <package>` downloads a `.whl` with platform-specific tags
-(like `cp311-cp311-manylinux`), it has native extensions and won't work.
-Pure-Python packages (those with `py3-none-any.whl`) might work if they don't
-import blocked modules.
+Use the Python standard library for data manipulation. Use host capabilities for any I/O that crosses a network boundary or requires credentials. This keeps your agent portable, auditable, and independent of environment-specific API keys.
 
 ---
 
 ## Casing Rules
 
-The SDK spans a Python/JavaScript boundary. Casing conventions differ on each side,
-and the bridge layer handles conversion for decorator metadata automatically.
+The SDK spans a Python/JavaScript boundary. Casing conventions differ on each side, and the bridge layer handles conversion for decorator metadata automatically.
 
 ### Your code (Python side)
 
@@ -70,85 +70,89 @@ and the bridge layer handles conversion for decorator metadata automatically.
 
 ### What the bridge converts automatically
 
-The `_bridge.py` module converts decorator metadata to camelCase when serializing
-for the host:
+The `_bridge.py` module converts decorator metadata to camelCase when serializing for the host:
 
 - `display_name` → `displayName`
 - `use_workspace_skills` → `useWorkspaceSkills`
 - `input_schema` → `inputSchema` (after JSON Schema extraction)
 
-You don't need to worry about this conversion — just use snake_case in Python
-and the bridge handles it.
+You don't need to worry about this conversion — just use snake_case in Python and the bridge handles it.
 
 ---
 
 ## Build Pipeline
 
-`atlas agent build` handles the full pipeline:
+`atlas agent register` handles the full pipeline:
 
 ```
-agent.py → componentize-py → agent.wasm → jco transpile → agent-js/ → Zod validation → metadata.json
+agent.py → spawn with FRIDAY_VALIDATE_ID → metadata.json over NATS
+         → copy source dir to ~/.friday/local/agents/{id}@{version}/
+         → write metadata.json sidecar
+         → reload registry
 ```
 
-You don't run these tools directly. If a build fails, the error message
-includes the phase (`compile`, `transpile`, `validate`, `write`) and details.
+You don't run NATS directly. If registration fails, the error message includes the phase (`prereqs`, `validate`, `write`) and details.
 
 ---
 
 ## Common Mistakes and Fixes
 
-### Missing Agent import
+### Missing `run()` entry point
 
 ```python
-# WRONG — build fails with "no exported Agent class"
+# WRONG — agent starts but immediately exits, never subscribes to NATS
 from friday_agent_sdk import agent, ok
 
 @agent(id="my-agent", version="1.0.0", description="...")
 def execute(prompt, ctx):
     return ok("hello")
+# No run() — process exits before handling any request
 ```
 
 ```python
-# CORRECT — Agent import is required even though unused
-from friday_agent_sdk import agent, ok
-from friday_agent_sdk._bridge import Agent  # noqa: F401
+# CORRECT — run() subscribes to NATS and handles the execute request
+from friday_agent_sdk import agent, ok, run
 
 @agent(id="my-agent", version="1.0.0", description="...")
 def execute(prompt, ctx):
     return ok("hello")
+
+if __name__ == "__main__":
+    run()
+```
+
+### Old `Agent` import from deleted class
+
+```python
+# WRONG — _bridge.Agent was deleted in the NATS rewrite
+from friday_agent_sdk._bridge import Agent  # noqa: F401
+```
+
+```python
+# CORRECT — no special import needed; run() is the entry point
+from friday_agent_sdk import agent, ok, run
 ```
 
 ### Returning raw values instead of ok/err
 
 ```python
-# WRONG — bridge doesn't know how to serialize raw dicts
+# WRONG — the SDK doesn't know how to serialize raw dicts
+@agent(id="my-agent", version="1.0.0", description="...")
 def execute(prompt, ctx):
     return {"result": "data"}
 ```
 
 ```python
 # CORRECT
+@agent(id="my-agent", version="1.0.0", description="...")
 def execute(prompt, ctx):
     return ok({"result": "data"})
-```
-
-### Trying to import blocked packages
-
-```python
-# WRONG — fails at build time
-import requests
-response = requests.get("https://api.example.com")
-```
-
-```python
-# CORRECT — use host HTTP capability
-response = ctx.http.fetch("https://api.example.com")
 ```
 
 ### Using pydantic for schemas
 
 ```python
-# WRONG — pydantic-core is a Rust C extension
+# WRONG — pydantic-core is a Rust C extension; may not be installed
 from pydantic import BaseModel
 
 class Config(BaseModel):
@@ -156,28 +160,12 @@ class Config(BaseModel):
 ```
 
 ```python
-# CORRECT — dataclasses are stdlib
+# CORRECT — dataclasses are stdlib and always available
 from dataclasses import dataclass
 
 @dataclass
 class Config:
     url: str
-```
-
-### Not handling None capabilities
-
-```python
-# WRONG — ctx.llm could be None
-def execute(prompt, ctx):
-    result = ctx.llm.generate(messages=[...])  # AttributeError if None
-```
-
-```python
-# CORRECT — either check or declare in decorator so platform provides it
-def execute(prompt, ctx):
-    if ctx.llm is None:
-        return err("LLM capability not available")
-    result = ctx.llm.generate(messages=[...])
 ```
 
 ### Confusing generate_object schema format
@@ -203,8 +191,7 @@ result = ctx.llm.generate_object(
 )
 ```
 
-Note: `parse_input` takes dataclasses for validation. `generate_object` takes
-JSON Schema dicts for LLM constraint. Different tools, different schema formats.
+Note: `parse_input` takes dataclasses for validation. `generate_object` takes JSON Schema dicts for LLM constraint. Different tools, different schema formats.
 
 ### Using parse_input with non-dataclass
 
@@ -240,16 +227,20 @@ def handle_b(prompt, ctx):
     return ok("b")
 ```
 
-One agent per file. Split into separate modules.
+One agent per file. Split into separate modules:
+
+```
+agents/
+  view-agent/agent.py
+  search-agent/agent.py
+  create-agent/agent.py
+```
 
 ---
 
 ## One Agent Per Module
 
-The registry enforces a singleton pattern. When `@agent` decorates a function,
-it registers with `_registry.py`. A second `@agent` call in the same module
-raises `RuntimeError`. This is by design — each `.py` file compiles to one WASM
-component.
+The registry enforces a singleton pattern. When `@agent` decorates a function, it registers with `_registry.py`. A second `@agent` call in the same module raises `RuntimeError`. This is by design — each `.py` file registers one agent identity.
 
 If you need multiple related agents, create separate files:
 
@@ -264,11 +255,9 @@ agents/
 
 ## Streaming LLM Responses
 
-Not yet supported. WASI 0.3 (expected late 2026) will enable streaming.
-Currently, `ctx.llm.generate()` blocks until the full response is ready.
+Not yet supported. `ctx.llm.generate()` blocks until the full response is ready.
 
-For long-running agents, use `ctx.stream.progress()` to emit status updates
-between LLM calls so the UI shows activity:
+For long-running agents, use `ctx.stream.progress()` to emit status updates between LLM calls so the UI shows activity:
 
 ```python
 ctx.stream.progress("Analyzing document structure...")

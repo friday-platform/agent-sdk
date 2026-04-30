@@ -4,7 +4,7 @@ Configure MCP servers in your agent decorator and call tools via `ctx.tools`.
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## Configure an MCP Server
+## Configure an MCP server
 
 Declare required MCP servers in the `@agent` decorator:
 
@@ -29,7 +29,7 @@ def execute(prompt, ctx):
     ...
 ```
 
-## List Available Tools
+## List available tools
 
 ```python
 tools = ctx.tools.list()
@@ -47,7 +47,7 @@ tool.description   # Human-readable description
 tool.input_schema  # JSON Schema for arguments
 ```
 
-## Call a Tool
+## Call a tool
 
 ```python
 result = ctx.tools.call(
@@ -62,7 +62,7 @@ result = ctx.tools.call(
 return ok({"issues": result["issues"]})
 ```
 
-## Error Handling
+## Error handling
 
 Tool failures raise `ToolCallError`:
 
@@ -79,7 +79,7 @@ def execute(prompt, ctx):
     return ok({"result": result})
 ```
 
-## Real Example: Time Operations
+## Real example: time operations
 
 ```python
 @agent(
@@ -119,7 +119,7 @@ def execute(prompt, ctx):
     })
 ```
 
-## Multiple MCP Servers
+## Multiple MCP servers
 
 ```python
 @agent(
@@ -154,7 +154,7 @@ def execute(prompt, ctx):
     ...
 ```
 
-## Environment Variables in MCP
+## Environment variables in MCP
 
 Pass environment variables to MCP server processes:
 
@@ -183,11 +183,11 @@ environment={
 }
 ```
 
-## Stdio vs SSE Transport
+## Stdio vs SSE transport
 
 Currently only `stdio` transport is supported. `sse` (Server-Sent Events) is planned.
 
-## Tool Chaining
+## Tool chaining
 
 ```python
 # Chain multiple tool calls
@@ -210,7 +210,7 @@ for issue in issues["issues"][:5]:
     # Process details...
 ```
 
-## See Also
+## See also
 
 - [API reference: ctx.tools](../reference/tools-capability.md)
 - [MCP specification](https://modelcontextprotocol.io/)

@@ -132,7 +132,8 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
         pass
 
     raise ValueError(
-        f"No valid JSON object found in prompt. Prompt starts with: {prompt[:200]}"
+        "No valid JSON object found in prompt. "
+        f"Prompt starts with: {prompt[:200]}"
     )
 
 

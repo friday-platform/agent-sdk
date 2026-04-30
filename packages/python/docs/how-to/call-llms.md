@@ -4,7 +4,7 @@ Route LLM calls through Friday's provider registry instead of importing API clie
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## Basic Generation
+## Basic generation
 
 Use `ctx.llm.generate()` for text completion:
 
@@ -20,7 +20,7 @@ def execute(prompt, ctx):
     return ok({"output": result.text})
 ```
 
-## Model Resolution
+## Model resolution
 
 You can specify models in three ways:
 
@@ -38,14 +38,14 @@ def execute(prompt, ctx):
     result = ctx.llm.generate(..., model="claude-haiku-4-5")
 ```
 
-Resolution cascade:
+Resolution order:
 
 1. Fully qualified per-call (`provider:model`) — use directly
 2. Bare per-call + decorator provider — resolve
 3. No per-call model + decorator default — use default
 4. Nothing configured — error
 
-## Structured Output
+## Structured output
 
 Use `ctx.llm.generate_object()` for JSON Schema-constrained output:
 
@@ -70,7 +70,7 @@ result = ctx.llm.generate_object(
 data = result.object
 ```
 
-## Response Fields
+## Response fields
 
 The `LlmResponse` object contains:
 
@@ -78,11 +78,11 @@ The `LlmResponse` object contains:
 result.text          # Generated text (None for generate_object)
 result.object        # Structured output dict (None for generate)
 result.model         # Model identifier used (e.g., "anthropic:claude-sonnet-4-6")
-result.usage         # {"prompt_tokens": 120, "completion_tokens": 250}
+result.usage         # {"input_tokens": 120, "output_tokens": 250}
 result.finish_reason # "stop", "length", etc.
 ```
 
-## Error Handling
+## Error handling
 
 LLM errors raise `LlmError`:
 
@@ -99,7 +99,7 @@ def execute(prompt, ctx):
     return ok({"output": result.text})
 ```
 
-## Advanced Options
+## Advanced options
 
 ```python
 result = ctx.llm.generate(
@@ -115,11 +115,19 @@ result = ctx.llm.generate(
 )
 ```
 
-## Why Not Import OpenAI/Anthropic Directly?
+## Why not import OpenAI/Anthropic directly?
 
-The WASM sandbox blocks native Python extensions like `pydantic-core`. The `openai` and `anthropic` packages depend on these. Host capabilities let you use the same functionality without dependency hell — Friday manages API keys, rate limits, and provider routing centrally.
+You technically can — agents run as native Python processes, so installed packages work. But host-provided LLM calls are still preferred:
 
-## See Also
+- **Credential management** — Friday injects API keys; your agent code never holds them
+- **Rate limiting and quotas** — The host enforces token budgets and retries
+- **Provider routing** — Friday selects the right provider based on model ID
+- **Audit logging** — All generation calls are logged
+- **Fallback models** — The host can automatically downgrade on rate-limit errors
+
+Use `ctx.llm.generate()` for any production LLM work. Use `openai` or `anthropic` directly only for internal tooling or debugging where host tracking isn't needed.
+
+## See also
 
 - [API reference: ctx.llm](../reference/llm-capability.md)
 - [How Friday Agents Work](../explanation/how-agents-work.md) — architecture rationale

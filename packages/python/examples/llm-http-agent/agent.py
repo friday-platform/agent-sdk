@@ -1,11 +1,9 @@
-"""LLM + HTTP agent — fixture for async host capability round-trip testing.
+"""LLM + HTTP agent — exercises ctx.llm.generate() and ctx.http.fetch().
 
-Exercises ctx.llm.generate() and ctx.http.fetch() through the WIT boundary.
 Prompt prefix selects which capability and success/error path to exercise.
 """
 
-from friday_agent_sdk import HttpError, LlmError, agent, err, ok
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
+from friday_agent_sdk import HttpError, LlmError, agent, err, ok, run
 
 
 @agent(
@@ -14,11 +12,6 @@ from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py nee
     description="Exercises LLM and HTTP capabilities",
 )
 def execute(prompt, ctx):
-    from wit_world.imports.capabilities import log
-
-    log(1, f"llm-http-agent executing: {prompt}")
-
-    # Prompt prefix selects capability and success/error path to exercise
     if prompt.startswith("llm:"):
         return _handle_llm(prompt[4:], ctx)
     elif prompt.startswith("llm-fail:"):
@@ -32,7 +25,7 @@ def execute(prompt, ctx):
 
 
 def _handle_llm(user_msg, ctx):
-    """LLM success path — model "test-model" expected to succeed."""
+    """LLM success path — model 'test-model' expected to succeed."""
     response = ctx.llm.generate(
         messages=[{"role": "user", "content": user_msg}],
         model="test-model",
@@ -49,7 +42,7 @@ def _handle_llm(user_msg, ctx):
 
 
 def _handle_llm_fail(user_msg, ctx):
-    """LLM error path — model "fail-model" triggers LlmError."""
+    """LLM error path — model 'fail-model' triggers LlmError."""
     try:
         ctx.llm.generate(
             messages=[{"role": "user", "content": user_msg}],
@@ -86,3 +79,7 @@ def _handle_http_fail(path, ctx):
         return err("expected HttpError but got success")
     except HttpError as e:
         return err(str(e))
+
+
+if __name__ == "__main__":
+    run()

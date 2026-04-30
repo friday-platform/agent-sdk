@@ -19,17 +19,20 @@ capability pattern.
 The absolute minimum. No capabilities, just echoes input.
 
 ```python
-from friday_agent_sdk import agent, ok
-from friday_agent_sdk._bridge import Agent  # noqa: F401
+from friday_agent_sdk import agent, ok, run
 
 @agent(id="echo", version="1.0.0", description="Echoes input")
 def execute(prompt, ctx):
     return ok(prompt)
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Key points:
 
-- `Agent` import is present but never referenced
+- `run()` in `__main__` is the entry point — without it, the agent exits immediately
 - `prompt` and `ctx` don't need type annotations (but they help)
 - `ok()` wraps any serializable value
 
@@ -40,8 +43,7 @@ Key points:
 Text analysis agent using structured output.
 
 ```python
-from friday_agent_sdk import agent, ok, err, AgentContext, LlmError
-from friday_agent_sdk._bridge import Agent  # noqa: F401
+from friday_agent_sdk import agent, ok, err, AgentContext, LlmError, run
 
 OUTPUT_SCHEMA = {
     "type": "object",
@@ -70,6 +72,10 @@ def execute(prompt: str, ctx: AgentContext):
         return ok(result.object)
     except LlmError as e:
         return err(f"LLM generation failed: {e}")
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Key points:
@@ -87,8 +93,7 @@ Agent that calls an external API using environment variables for auth.
 ```python
 import json
 import base64
-from friday_agent_sdk import agent, ok, err, AgentContext, HttpError
-from friday_agent_sdk._bridge import Agent  # noqa: F401
+from friday_agent_sdk import agent, ok, err, AgentContext, HttpError, run
 
 @agent(
     id="weather-check",
@@ -124,6 +129,10 @@ def execute(prompt: str, ctx: AgentContext):
         "description": data.get("weather", [{}])[0].get("description"),
         "humidity": data.get("main", {}).get("humidity"),
     })
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Key points:
@@ -140,8 +149,7 @@ Key points:
 Agent that uses an MCP server to interact with external services.
 
 ```python
-from friday_agent_sdk import agent, ok, err, AgentContext, ToolCallError
-from friday_agent_sdk._bridge import Agent  # noqa: F401
+from friday_agent_sdk import agent, ok, err, AgentContext, ToolCallError, run
 
 @agent(
     id="time-agent",
@@ -170,6 +178,10 @@ def execute(prompt: str, ctx: AgentContext):
         return ok({"time_result": result})
     except ToolCallError as e:
         return err(f"Tool call failed: {e}")
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Key points:
@@ -189,9 +201,7 @@ This is the pattern used by the Jira and GitHub agents.
 ```python
 import json
 from dataclasses import dataclass
-from friday_agent_sdk import agent, ok, err, parse_operation, AgentContext
-from friday_agent_sdk._bridge import Agent  # noqa: F401
-from friday_agent_sdk._result import OkResult, ErrResult
+from friday_agent_sdk import agent, ok, err, parse_operation, AgentContext, run
 
 
 @dataclass
@@ -219,7 +229,7 @@ OPERATIONS: dict[str, type] = {
 }
 
 
-def _handle_view(config: ViewConfig, ctx: AgentContext) -> OkResult | ErrResult:
+def _handle_view(config: ViewConfig, ctx: AgentContext):
     response = ctx.http.fetch(
         f"https://api.example.com/items/{config.item_id}",
         headers={"Authorization": f"Bearer {ctx.env['API_TOKEN']}"},
@@ -229,7 +239,7 @@ def _handle_view(config: ViewConfig, ctx: AgentContext) -> OkResult | ErrResult:
     return ok({"operation": "view", "success": True, "data": response.json()})
 
 
-def _handle_search(config: SearchConfig, ctx: AgentContext) -> OkResult | ErrResult:
+def _handle_search(config: SearchConfig, ctx: AgentContext):
     response = ctx.http.fetch(
         "https://api.example.com/search",
         method="POST",
@@ -244,7 +254,7 @@ def _handle_search(config: SearchConfig, ctx: AgentContext) -> OkResult | ErrRes
     return ok({"operation": "search", "success": True, "data": response.json()})
 
 
-def _handle_create(config: CreateConfig, ctx: AgentContext) -> OkResult | ErrResult:
+def _handle_create(config: CreateConfig, ctx: AgentContext):
     payload = {"title": config.title}
     if config.description:
         payload["description"] = config.description
@@ -273,7 +283,7 @@ def _handle_create(config: CreateConfig, ctx: AgentContext) -> OkResult | ErrRes
         "required": [{"name": "API_TOKEN", "description": "API authentication token"}]
     },
 )
-def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
+def execute(prompt: str, ctx: AgentContext):
     try:
         config = parse_operation(prompt, OPERATIONS)
     except ValueError as e:
@@ -283,6 +293,10 @@ def execute(prompt: str, ctx: AgentContext) -> OkResult | ErrResult:
         case "view": return _handle_view(config, ctx)
         case "search": return _handle_search(config, ctx)
         case "create": return _handle_create(config, ctx)
+
+
+if __name__ == "__main__":
+    run()
 ```
 
 Key points:
@@ -290,7 +304,7 @@ Key points:
 - Dataclasses define operation schemas — each must have an `operation: str` field
 - `parse_operation` finds JSON with `"operation"` field and dispatches to matching schema
 - `match` statement for clean dispatch
-- Each handler returns `OkResult | ErrResult` for consistent typing
+- Each handler returns `ok()` or `err()` for consistent shape
 - Operation response includes `"operation"` and `"success"` fields by convention
 
 ---
@@ -299,10 +313,10 @@ Key points:
 
 | Pattern            | When to use                                  | Key imports                          |
 | ------------------ | -------------------------------------------- | ------------------------------------ |
-| Echo/passthrough   | Testing, simple transforms                   | `ok`                                 |
-| LLM generation     | Text analysis, classification, summarization | `ok, err, LlmError`                  |
-| HTTP integration   | External API calls                           | `ok, err, HttpError`                 |
-| MCP tools          | Pre-built service integrations               | `ok, err, ToolCallError`             |
-| Multi-operation    | Agents handling multiple distinct tasks      | `ok, err, parse_operation`           |
+| Echo/passthrough   | Testing, simple transforms                   | `ok, run`                            |
+| LLM generation     | Text analysis, classification, summarization | `ok, err, LlmError, run`             |
+| HTTP integration   | External API calls                           | `ok, err, HttpError, run`            |
+| MCP tools          | Pre-built service integrations               | `ok, err, ToolCallError, run`        |
+| Multi-operation    | Agents handling multiple distinct tasks      | `ok, err, parse_operation, run`      |
 | Structured output  | When you need typed JSON from LLM            | `generate_object` + JSON Schema dict |
 | Streaming progress | Long-running tasks                           | `ctx.stream.progress()`              |
