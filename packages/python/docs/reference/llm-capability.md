@@ -182,13 +182,19 @@ Valid roles: `system`, `user`, `assistant`
 
 ## Limitations
 
-- **No streaming responses** — Full response returned as string (WASI 0.3 will enable streaming in late 2026)
-- **Synchronous only** — `generate()` suspends via JSPI but returns complete response
+- **No streaming responses** — Full response returned as string; streaming may be added in a future protocol revision
+- **Synchronous only** — `generate()` blocks until the complete response is ready
 - **5MB implicit limit** — Via platform constraints on response size
 
 ## Why Host-Managed?
 
-The WASM sandbox blocks native extensions like `pydantic-core`. The `openai` and `anthropic` packages depend on these. Host capabilities provide the same functionality without dependency hell — Friday manages API keys, rate limits, and provider routing centrally.
+Host-provided LLM calls are preferred over direct `openai`/`anthropic` usage even though agents run as native processes:
+
+- **Credential management** — Friday injects API keys; your agent code never holds them
+- **Rate limiting and quotas** — The host enforces token budgets and retries
+- **Provider routing** — Friday selects the right provider based on model ID
+- **Audit logging** — All generation calls are logged
+- **Fallback models** — The host can automatically downgrade on rate-limit errors
 
 ## See Also
 

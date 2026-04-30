@@ -1,25 +1,23 @@
 # Friday Agent SDK for Python
 
-Write AI agents in Python that run inside Friday's WebAssembly sandbox.
+Write AI agents in Python that run inside the Friday platform. Agents call LLMs, make HTTP requests, and use MCP tools through the host — no API keys or dependencies required in agent code.
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with Compose
-- An Anthropic API key (or another supported LLM provider)
-
-> **Optional:** Python 3.11+ locally gives your editor autocomplete and type
-> checking for the SDK. The build runs inside Docker — you do not need Python on
-> your machine.
+- Python 3.12+ installed locally
+- The Friday daemon running
+- An Anthropic API key (or another supported LLM provider) configured in the platform
 
 ## Quickstart
 
-Add your API key to `.env` next to your `docker-compose.yml`:
+Install the SDK:
 
-```env
-ANTHROPIC_API_KEY=sk-ant-...
+```bash
+cd packages/python
+pip install -e .  # or uv pip install -e .
 ```
 
-Create an agent in the `agents/` directory:
+Create an agent directory:
 
 ```bash
 mkdir -p agents/my-analyzer
@@ -28,8 +26,7 @@ mkdir -p agents/my-analyzer
 Write `agents/my-analyzer/agent.py`:
 
 ```python
-from friday_agent_sdk import agent, ok, AgentContext
-from friday_agent_sdk._bridge import Agent  # componentize-py requires this import
+from friday_agent_sdk import agent, ok, AgentContext, run
 
 @agent(
     id="my-analyzer",
@@ -37,28 +34,34 @@ from friday_agent_sdk._bridge import Agent  # componentize-py requires this impo
     description="Analyzes text with an LLM",
 )
 def execute(prompt: str, ctx: AgentContext):
-    # Call the host's LLM provider — no API key needed
     result = ctx.llm.generate(
         messages=[{"role": "user", "content": f"Summarize this: {prompt}"}],
         model="anthropic:claude-haiku-4-5",
     )
     return ok({"summary": result.text})
+
+if __name__ == "__main__":
+    run()
 ```
 
-Start (or restart) the platform to build your agent:
+Register your agent with the daemon:
 
 ```bash
-docker compose up -d
-# or, if already running:
-docker compose restart platform
+atlas agent register ./agents/my-analyzer
 ```
 
 Test it:
 
 ```bash
-curl -s -X POST http://localhost:15200/api/execute \
+atlas agent exec my-analyzer -i "Summarize this codebase"
+```
+
+Or via the playground API:
+
+```bash
+curl -s -X POST http://localhost:5200/api/agents/my-analyzer/run \
   -H 'Content-Type: application/json' \
-  -d '{"agentId": "my-analyzer", "input": "Summarize this codebase"}' | jq .
+  -d '{"input": "Summarize this codebase"}'
 ```
 
 ## Documentation
@@ -71,17 +74,15 @@ curl -s -X POST http://localhost:15200/api/execute \
   - [Handle structured input](docs/how-to/handle-structured-input.md)
   - [Stream progress updates](docs/how-to/stream-progress.md)
 - [**API Reference**](docs/reference/) — Complete decorator, context, and capability documentation
-- [**How Friday Agents Work**](docs/explanation/how-agents-work.md) — Architecture, WASM sandbox, and design decisions
+- [**How Friday Agents Work**](docs/explanation/how-agents-work.md) — Architecture and design decisions (optional reading)
 
 ## Installation
 
-The SDK is a compile-time dependency only. It is compiled into your WASM binary by `componentize-py`. You do not install it into a virtual environment for runtime use.
-
-During development, you will want the SDK available for type checking and IDE support:
+The SDK is a normal Python package. Install it for development and execution:
 
 ```bash
 cd packages/python
-pip install -e .  # or uv pip install -e .
+pip install -e .
 ```
 
 ## Examples
@@ -98,16 +99,7 @@ See the [`examples/`](examples/) directory for complete agents ranging from mini
 | `bb-agent`          | Bitbucket PR operations — production HTTP patterns   |
 | `claude-code-agent` | Full coding agent with fallbacks and model selection |
 
-Each example includes a compiled `agent.wasm` and `agent-js/` directory for reference.
-
 ## Testing
-
-Run the conformance tests that validate your agent against the JSON Schema contracts:
-
-```bash
-vp test  # from the repo root, or:
-cd packages/conformance && vp test
-```
 
 Run unit tests for the Python SDK:
 
@@ -116,82 +108,63 @@ cd packages/python
 pytest
 ```
 
-## The WIT Contract
-
-The Python SDK implements the `friday:agent` WIT interface defined in `packages/wit/agent.wit`. Key exports your agent must provide:
-
-```wit
-export get-metadata: func() -> string;  // Returns JSON metadata
-export execute: func(prompt: string, context: string) -> agent-result;
-```
-
-The `@agent` decorator and SDK bridge handle this for you. See the [WIT file](../wit/agent.wit) for the full contract including host capabilities (`llm-generate`, `http-fetch`, `call-tool`, etc.).
-
 ## Advanced Usage
 
 ### Custom Entry Points
 
-If your agent file is not named `agent.py`, specify the entry point via the API:
+If your agent file is not named `agent.py`, specify the entry point during registration:
 
 ```bash
-curl -s -X POST http://localhost:18080/api/agents/build \
-  -F "files=@main.py;filename=main.py" \
-  -F "entry_point=main" \
-  | jq .
+atlas agent register ./my-agent --entry main.py
 ```
 
-### Docker Compose Details
-
-The quickstart above covers the standard flow. Additional details:
-
-To use a different agent source directory, set `AGENTS_DIR` in your `.env`:
-
-```env
-AGENTS_DIR=./my-agents
-```
-
-Host port mappings:
-
-| Service       | Host Port | Container Port |
-| ------------- | --------- | -------------- |
-| Daemon API    | `18080`   | `8080`         |
-| Playground UI | `15200`   | `5200`         |
-| Link (auth)   | `13100`   | `3100`         |
-
-Built agents survive container restarts. To start fresh:
+Or via the API:
 
 ```bash
-docker compose down -v && docker compose up -d
+curl -s -X POST http://localhost:8080/api/agents/register \
+  -H 'Content-Type: application/json' \
+  -d '{"entrypoint": "/path/to/my-agent/main.py"}'
+```
+
+### Direct Execution API
+
+For CI/CD pipelines or automation, execute agents via the daemon API:
+
+```bash
+curl -s -X POST http://localhost:8080/api/agents/my-agent/run \
+  -H 'Content-Type: application/json' \
+  -d '{"input": "test prompt"}'
+```
+
+Error responses include the phase that failed (`prereqs`, `validate`, `write`):
+
+```json
+{ "ok": false, "phase": "validate", "error": "description is required" }
 ```
 
 ## Limitations
 
-- **No native extensions** — The WASM sandbox blocks C extensions (pydantic-core, numpy, etc.). Use host capabilities instead.
-- **No streaming LLM responses** — Requires WASI 0.3 (expected late 2026).
-- **One agent per module** — Each `.py` file builds to one WASM component.
-- **5MB HTTP response limit** — Matches Friday's platform webfetch limit.
+- **No streaming LLM responses** — `ctx.llm.generate()` blocks until the full response is ready
+- **One agent per file** — Each `.py` file registers exactly one `@agent`
+- **5MB HTTP response limit** — Matches Friday's platform webfetch limit
+- **Spawn-per-call** — Each execution starts a fresh process; keep startup lightweight
 
 ## Troubleshooting
 
-**Build fails with "componentize-py not found"**
-The build runs inside the platform container. Verify it is running:
-`docker compose ps platform`
+**Registration fails with "validate timeout"**
+The daemon spawns your agent to collect metadata and waits up to 15s. Check that `run()` is called in `__main__` and that the daemon is running.
 
-**Agent not appearing after build**
-Check the build logs: `docker compose logs platform | grep -i "built agent"`.
-Agents are discoverable at `GET http://localhost:18080/api/agents`.
+**Agent not appearing after registration**
+Check that registration succeeded: `atlas agent list`. Agents are stored in `~/.friday/local/agents/`.
 
-**Build returns 400 error**
-The build API returns HTTP 400 for user errors with a specific phase:
+**Registration returns 400**
+Your `@agent` decorator metadata failed validation. Required fields: `id`, `version`, `description`.
 
-```json
-{ "ok": false, "phase": "compile", "error": "SyntaxError: ..." }
-```
+**Execution hangs**
+The agent may not be signaling readiness before the daemon sends the execute request. Verify `run()` is called.
 
-Phases: `"compile"` (Python syntax), `"transpile"` (jco WASM-to-JS), `"validate"` (metadata schema), `"write"` (filesystem).
-
-**Import errors in IDE but build works**
-The `friday_agent_sdk` is compiled into WASM — your IDE needs it installed locally (`pip install -e .`) for type checking, but this is separate from the WASM build.
+**Import errors in IDE**
+The `friday_agent_sdk` must be installed locally (`pip install -e .`) for type checking and autocomplete.
 
 ## License
 

@@ -12,9 +12,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from friday_agent_sdk import agent, err, ok, parse_operation
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
-from friday_agent_sdk._result import ErrResult, OkResult
+from friday_agent_sdk import agent, err, ok, parse_operation, run
 
 
 @dataclass
@@ -920,7 +918,7 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
 
 
 @agent(id="bb", version="1.0.0", description="Bitbucket PR operations agent")
-def execute(prompt: str, ctx) -> OkResult | ErrResult:
+def execute(prompt: str, ctx):
     """Parse operation from prompt and dispatch to handler.
 
     Single-pass parsing: filters to JSON objects containing "operation",
@@ -956,3 +954,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
             return _repo_clone(config, ctx)
         case "repo-push":
             return _repo_push(config, ctx)
+
+
+if __name__ == "__main__":
+    run()

@@ -117,7 +117,15 @@ result = ctx.llm.generate(
 
 ## Why Not Import OpenAI/Anthropic Directly?
 
-The WASM sandbox blocks native Python extensions like `pydantic-core`. The `openai` and `anthropic` packages depend on these. Host capabilities let you use the same functionality without dependency hell — Friday manages API keys, rate limits, and provider routing centrally.
+You technically can — agents run as native Python processes, so installed packages work. But host-provided LLM calls are still preferred:
+
+- **Credential management** — Friday injects API keys; your agent code never holds them
+- **Rate limiting and quotas** — The host enforces token budgets and retries
+- **Provider routing** — Friday selects the right provider based on model ID
+- **Audit logging** — All generation calls are logged
+- **Fallback models** — The host can automatically downgrade on rate-limit errors
+
+Use `ctx.llm.generate()` for any production LLM work. Use `openai` or `anthropic` directly only for internal tooling or debugging where host tracking isn't needed.
 
 ## See Also
 

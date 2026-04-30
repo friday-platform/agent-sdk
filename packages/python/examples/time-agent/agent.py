@@ -1,11 +1,6 @@
-"""Time agent — fixture for MCP tool usage with mcp-server-time.
+"""Time agent — exercises MCP tool usage with mcp-server-time."""
 
-Exercises ctx.tools.list() and ctx.tools.call() against a real MCP server
-that provides get_current_time and convert_time tools.
-"""
-
-from friday_agent_sdk import ToolCallError, agent, err, ok
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
+from friday_agent_sdk import ToolCallError, agent, err, ok, run
 
 
 @agent(
@@ -40,63 +35,63 @@ def execute(prompt, ctx):
 
 
 def _handle_discover(ctx):
-    # MCP tool discovery — introspects what mcp-server-time provides
     tools = ctx.tools.list()
-    return ok({"tools": [t.name for t in tools], "count": len(tools)})
+    return ok({"tool_names": [t.name for t in tools]})
 
 
 def _handle_now(ctx):
     result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
-    return ok({"time_result": result})
+    return ok({"utc_now": result})
 
 
 def _handle_convert(prompt, ctx):
-    """Parse 'convert <time> <from_tz> <to_tz>' and convert."""
-    parts = prompt.split()
-    if len(parts) != 4:
-        return err("expected: convert <HH:MM> <source_tz> <target_tz>")
-    _, time_str, source_tz, target_tz = parts
+    parts = prompt.split(" ", 2)
+    if len(parts) < 3:
+        return err("Usage: convert <time> <from> to <to>")
+    _, time_str, rest = parts
+    from_to = rest.split(" to ")
+    if len(from_to) != 2:
+        return err("Usage: convert <time> <from> to <to>")
     result = ctx.tools.call(
         "convert_time",
         {
-            "source_timezone": source_tz,
+            "source_timezone": from_to[0].strip(),
             "time": time_str,
-            "target_timezone": target_tz,
+            "target_timezone": from_to[1].strip(),
         },
     )
-    return ok({"convert_result": result})
+    return ok({"converted": result})
 
 
 def _handle_combo(ctx):
-    # Sequential tool calls verify ctx.tools state persists across invocations
-    time_result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
-    convert_result = ctx.tools.call(
+    now = ctx.tools.call("get_current_time", {"timezone": "UTC"})
+    converted = ctx.tools.call(
         "convert_time",
         {
             "source_timezone": "UTC",
-            "time": "12:00",
+            "time": now["time"],
             "target_timezone": "America/New_York",
         },
     )
-    return ok({"time_result": time_result, "convert_result": convert_result})
+    return ok({"utc": now, "nyc": converted})
 
 
 def _handle_bad_tool(ctx):
-    """Call a nonexistent tool — should raise ToolCallError."""
     try:
         ctx.tools.call("nonexistent_tool", {})
-        return err("expected ToolCallError but got success")
+        return err("expected ToolCallError")
     except ToolCallError as e:
-        return err(str(e))
+        return ok({"error": str(e)})
 
 
 def _handle_bad_tool_then_now(ctx):
-    # Error recovery pattern — failed tool call should not break subsequent calls
     try:
         ctx.tools.call("nonexistent_tool", {})
-        return err("expected ToolCallError but got success")
-    except ToolCallError as e:
-        error_msg = str(e)
-
+    except ToolCallError:
+        pass
     result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
-    return ok({"error_caught": error_msg, "time_result": result})
+    return ok({"recovered": True, "utc_now": result})
+
+
+if __name__ == "__main__":
+    run()

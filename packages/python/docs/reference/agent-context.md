@@ -11,10 +11,10 @@ class AgentContext:
     config: dict = field(default_factory=dict)
     session: SessionData | None = None
     output_schema: dict | None = None
-    tools: Tools | None = None
-    llm: Llm | None = None
-    http: Http | None = None
-    stream: StreamEmitter | None = None
+    tools: Tools = field(default_factory=_uninitialized_tools)
+    llm: Llm = field(default_factory=_uninitialized_llm)
+    http: Http = field(default_factory=_uninitialized_http)
+    stream: StreamEmitter = field(default_factory=_uninitialized_stream)
 ```
 
 ## Fields
@@ -80,8 +80,8 @@ else:
 
 ### `tools`
 
-- **Type:** `Tools | None`
-- **Description:** MCP tool capability wrapper. Available when MCP servers are configured.
+- **Type:** `Tools`
+- **Description:** MCP tool capability wrapper. Always initialized.
 
 Methods:
 
@@ -92,8 +92,8 @@ See [ctx.tools](tools-capability.md).
 
 ### `llm`
 
-- **Type:** `Llm | None`
-- **Description:** LLM capability wrapper for generation calls.
+- **Type:** `Llm`
+- **Description:** LLM capability wrapper for generation calls. Always initialized.
 
 Methods:
 
@@ -104,8 +104,8 @@ See [ctx.llm](llm-capability.md).
 
 ### `http`
 
-- **Type:** `Http | None`
-- **Description:** HTTP capability wrapper for outbound requests.
+- **Type:** `Http`
+- **Description:** HTTP capability wrapper for outbound requests. Always initialized.
 
 Methods:
 
@@ -115,8 +115,8 @@ See [ctx.http](http-capability.md).
 
 ### `stream`
 
-- **Type:** `StreamEmitter | None`
-- **Description:** Stream capability for progress emission.
+- **Type:** `StreamEmitter`
+- **Description:** Stream capability for progress emission. Always initialized.
 
 Methods:
 
@@ -134,17 +134,17 @@ See [ctx.stream](stream-capability.md).
 | `config`        | Yes        | Empty dict if no config provided        |
 | `session`       | No         | May be None outside Friday sessions     |
 | `output_schema` | No         | Only when caller specifies schema       |
-| `tools`         | No         | Only when MCP servers configured        |
-| `llm`           | No         | Only when host provides LLM capability  |
-| `http`          | No         | Only when host provides HTTP capability |
-| `stream`        | No         | May be None in test contexts            |
+| `tools`         | Yes        | Always initialized (stub in tests)      |
+| `llm`           | Yes        | Always initialized (stub in tests)      |
+| `http`          | Yes        | Always initialized (stub in tests)      |
+| `stream`        | Yes        | Always initialized (stub in tests)      |
 
 ## Defensive Programming
 
 ```python
-from friday_agent_sdk import agent, ok
+from friday_agent_sdk import agent, ok, err
 
-@agent(id="safe", version="1.0.0", description="Handles missing capabilities")
+@agent(id="safe", version="1.0.0", description="Handles edge cases")
 def execute(prompt, ctx):
     # Safe access with fallbacks
     api_key = ctx.env.get("OPTIONAL_KEY")  # Returns None if missing
@@ -153,31 +153,27 @@ def execute(prompt, ctx):
     if "REQUIRED_KEY" not in ctx.env:
         return err("REQUIRED_KEY not set. Connect in Friday Link.")
 
-    # Capability checks
-    if ctx.llm is None:
-        return err("LLM capability not available")
+    # Capabilities are always present; errors come from the host
+    try:
+        if ctx.output_schema:
+            result = ctx.llm.generate_object(..., schema=ctx.output_schema)
+        else:
+            result = ctx.llm.generate(...)
+    except Exception as e:
+        return err(f"LLM call failed: {e}")
 
-    if ctx.output_schema:
-        # Structured path
-        result = ctx.llm.generate_object(...)
-    else:
-        # Standard path
-        result = ctx.llm.generate(...)
-
-    # Safe progress emission
-    if ctx.stream:
-        ctx.stream.progress("Working...")
+    ctx.stream.progress("Working...")
 
     return ok({"result": result.text})
 ```
 
 ## Context Round-Trip
 
-All context fields survive the host-to-WASM-to-host round trip:
+All context fields survive the host-to-agent round trip:
 
 1. Friday serialises context as JSON
-2. JSON passes to WASM `execute(prompt, context)`
-3. SDK bridge deserialises to `AgentContext` dataclass
+2. JSON is sent to the agent process
+3. SDK deserialises to `AgentContext` dataclass
 4. Your code uses the context
 5. Result serialises back to host
 

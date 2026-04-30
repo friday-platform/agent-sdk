@@ -10,9 +10,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from friday_agent_sdk import agent, err, ok, parse_input
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
-from friday_agent_sdk._result import ErrResult, OkResult
+from friday_agent_sdk import agent, err, ok, parse_input, run
 
 
 @dataclass
@@ -737,7 +735,7 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
 
 
 @agent(id="gh", version="1.0.0", description="GitHub PR operations agent")
-def execute(prompt: str, ctx) -> OkResult | ErrResult:
+def execute(prompt: str, ctx):
     """Dispatch to operation handler based on prompt.
 
     Two-pass parsing: raw parse extracts operation discriminator, then
@@ -770,3 +768,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
             return _pr_inline_review(config, ctx)
         case "pr-post-followup":
             return _pr_post_followup(config, ctx)
+
+
+if __name__ == "__main__":
+    run()

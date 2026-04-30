@@ -107,33 +107,30 @@ Do not emit:
 - For trivial operations (< 100ms)
 - Excessively verbose detail ("Step 1 of 50", "Step 2 of 50"...)
 
-## Emission During JSPI Calls
+## Emitting During Long Operations
 
-Progress emits happen synchronously — they do not suspend the WASM JSPI context. This means you can emit progress while the host is processing an LLM call:
+`ctx.stream.progress()` returns immediately — it does not wait for the host to process the event. This means you can emit progress before expensive operations and the UI updates right away:
 
 ```python
 ctx.stream.progress("Starting LLM call...")
 
-# This suspends via JSPI — progress was already sent
+# This blocks until the full response is ready
 result = ctx.llm.generate(messages, model="claude-sonnet-4-6")
 
-# Host may have emitted its own progress during the suspend
-# Now we're back in Python
+# Back in your code — emit the next update
 ctx.stream.progress("LLM complete, processing...")
 ```
 
 ## Fallback When Stream Unavailable
 
-The `ctx.stream` field may be `None` in test contexts. Handle gracefully:
+In test contexts without a host, `ctx.stream` is a no-op stub that safely ignores calls. You can call it unconditionally:
 
 ```python
-if ctx.stream:
-    ctx.stream.progress("Working...")
+ctx.stream.progress("Working...")  # Safe even in tests
 
-# Or use a helper
+# Or use a helper for consistency
 def progress(ctx, msg):
-    if ctx.stream:
-        ctx.stream.progress(msg)
+    ctx.stream.progress(msg)
 
 progress(ctx, "Starting...")
 ```

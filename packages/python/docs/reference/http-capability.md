@@ -237,7 +237,15 @@ Not yet implemented. Currently all outbound HTTPS requests are allowed.
 
 ## Why Not Use `requests` or `httpx`?
 
-The WASM sandbox blocks the `ssl` module, which `httpx` imports unconditionally. Host-provided HTTP handles TLS termination outside the sandbox, enabling HTTPS calls safely.
+You technically can — agents run as native Python processes, so installed packages work. But host-provided HTTP is still preferred:
+
+- **Credential management** — Friday injects API keys; your agent code never holds them
+- **Audit logging** — All requests are logged by the platform
+- **Rate limiting** — The host enforces quotas and retries
+- **TLS termination** — Certificates and CA bundles managed centrally
+- **Response limits** — 5MB cap enforced uniformly
+
+Use `ctx.http.fetch()` for any I/O that needs production observability. Use `requests` only for internal tooling or debugging where host tracking isn't needed.
 
 ## See Also
 

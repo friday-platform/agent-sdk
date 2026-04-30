@@ -8,9 +8,7 @@ with the host managing subprocess lifecycle and sandbox.
 import json
 import re
 
-from friday_agent_sdk import AgentExtras, ArtifactRef, agent, err, ok
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
-from friday_agent_sdk._result import ErrResult, OkResult
+from friday_agent_sdk import AgentExtras, ArtifactRef, OkResult, agent, err, ok, run
 
 # ---------------------------------------------------------------------------
 # Pre-processing
@@ -202,7 +200,7 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
     },
     use_workspace_skills=True,
 )
-def execute(prompt: str, ctx) -> OkResult | ErrResult:
+def execute(prompt: str, ctx):
     # --- Verify Anthropic API key is configured ---
     api_key = ctx.env.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -298,3 +296,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
         return ok({"response": response_text}, extras)
 
     return ok({"response": response_text}, extras)
+
+
+if __name__ == "__main__":
+    run()

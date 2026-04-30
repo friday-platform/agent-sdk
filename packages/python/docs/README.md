@@ -8,7 +8,7 @@ New to Friday agents? Start with the tutorial:
 
 [**→ Your First Friday Agent**](tutorial/your-first-agent.md)
 
-Build a complete agent that uses an LLM to analyze text, run it in Friday, and iterate on your design.
+Build a complete agent that uses an LLM to analyze text, register it with Friday, and iterate on your design.
 
 ## How-to Guides
 
@@ -26,22 +26,22 @@ Task-focused recipes for common patterns:
 
 Complete API documentation:
 
-| Document                                         | Description                                   |
-| ------------------------------------------------ | --------------------------------------------- |
-| [@agent decorator](reference/agent-decorator.md) | Decorator parameters and metadata             |
-| [AgentContext](reference/agent-context.md)       | Execution context and capability availability |
-| [ctx.llm](reference/llm-capability.md)           | LLM generation methods and response types     |
-| [ctx.http](reference/http-capability.md)         | HTTP fetch and response handling              |
-| [ctx.tools](reference/tools-capability.md)       | MCP tool listing and invocation               |
-| [ctx.stream](reference/stream-capability.md)     | Progress and intent emission                  |
-| [Result types](reference/result-types.md)        | `ok()`, `err()`, and tagged union pattern     |
-| [Parse utilities](reference/parse-utilities.md)  | `parse_input()` and `parse_operation()`       |
+| Document                                         | Description                                     |
+| ------------------------------------------------ | ----------------------------------------------- |
+| [@agent decorator](reference/agent-decorator.md) | Decorator parameters, metadata, and entry point |
+| [AgentContext](reference/agent-context.md)       | Execution context and capability availability   |
+| [ctx.llm](reference/llm-capability.md)           | LLM generation methods and response types       |
+| [ctx.http](reference/http-capability.md)         | HTTP fetch and response handling                |
+| [ctx.tools](reference/tools-capability.md)       | MCP tool listing and invocation                 |
+| [ctx.stream](reference/stream-capability.md)     | Progress and intent emission                    |
+| [Result types](reference/result-types.md)        | `ok()`, `err()`, and tagged union pattern       |
+| [Parse utilities](reference/parse-utilities.md)  | `parse_input()` and `parse_operation()`         |
 
 ## Explanation
 
 Understanding the architecture:
 
-- [**How Friday Agents Work**](explanation/how-agents-work.md) — WASM sandbox, host capabilities, JSPI bridging, and the build pipeline
+- [**How Friday Agents Work**](explanation/how-agents-work.md) — Subprocess model, host capabilities, and the registration pipeline
 
 ## Examples
 

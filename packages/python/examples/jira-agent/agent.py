@@ -12,9 +12,7 @@ import json
 import re
 from dataclasses import dataclass
 
-from friday_agent_sdk import agent, err, ok, parse_operation
-from friday_agent_sdk._bridge import Agent  # noqa: F401 — componentize-py needs this
-from friday_agent_sdk._result import ErrResult, OkResult
+from friday_agent_sdk import agent, err, ok, parse_operation, run
 
 
 @dataclass
@@ -464,7 +462,7 @@ def _issue_comment(
 
 
 @agent(id="jira", version="1.0.0", description="Jira issue operations agent")
-def execute(prompt: str, ctx) -> OkResult | ErrResult:
+def execute(prompt: str, ctx):
     """Dispatch to operation handler based on prompt.
 
     Single-pass parsing with discriminator: parse_operation() filters to
@@ -490,3 +488,7 @@ def execute(prompt: str, ctx) -> OkResult | ErrResult:
             return _issue_update(config, ctx)
         case "issue-comment":
             return _issue_comment(config, ctx)
+
+
+if __name__ == "__main__":
+    run()

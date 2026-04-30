@@ -56,8 +56,10 @@ def execute(prompt, ctx):
     if "API_KEY" not in ctx.env:
         return err("API_KEY not set. Connect the provider in Friday Link.")
 
-    if ctx.llm is None:
-        return err("LLM capability not available in this context.")
+    try:
+        result = ctx.llm.generate(...)
+    except Exception as e:
+        return err(f"LLM call failed: {e}")
 
     return ok({"status": "ready"})
 ```
@@ -121,14 +123,19 @@ def handle(result: AgentResult):
 
 ## Serialisation
 
-The bridge converts results to the WIT `agent-result` variant:
+`ok()` serialises `data` to JSON and wraps it in a tagged envelope:
 
-```wit
-variant agent-result {
-    ok(string),   // JSON-serialised ok.data
-    err(string),  // err.error message
-}
+```json
+{ "tag": "ok", "val": "{\"answer\": 42}" }
 ```
+
+`err()` wraps the error message directly:
+
+```json
+{ "tag": "err", "val": "Something broke" }
+```
+
+The SDK handles this automatically — you only work with `ok()` and `err()` in agent code.
 
 ## Best Practices
 
