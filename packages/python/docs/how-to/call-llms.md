@@ -78,7 +78,7 @@ The `LlmResponse` object contains:
 result.text          # Generated text (None for generate_object)
 result.object        # Structured output dict (None for generate)
 result.model         # Model identifier used (e.g., "anthropic:claude-sonnet-4-6")
-result.usage         # {"prompt_tokens": 120, "completion_tokens": 250}
+result.usage         # {"input_tokens": 120, "output_tokens": 250}
 result.finish_reason # "stop", "length", etc.
 ```
 

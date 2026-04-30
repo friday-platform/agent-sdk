@@ -119,7 +119,7 @@ class LlmResponse:
     text: str | None           # Generated text (None for generate_object)
     object: dict | None        # Structured output dict (None for generate)
     model: str                 # Model identifier used (e.g., "anthropic:claude-sonnet-4-6")
-    usage: dict                # {"prompt_tokens": 120, "completion_tokens": 250}
+    usage: dict                # {"input_tokens": 120, "output_tokens": 250}
     finish_reason: str         # "stop", "length", "content_filter", etc.
 ```
 
