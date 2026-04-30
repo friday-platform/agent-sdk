@@ -1,6 +1,6 @@
 """Tests for Tools wrapper — ctx.tools.call() and ctx.tools.list().
 
-componentize-py unwraps result<T, E>: Ok returns T directly, Err raises
+The host unwraps result<T, E>: Ok returns T directly, Err raises
 an Err(str) exception with a .value attribute.
 """
 
@@ -15,7 +15,7 @@ from friday_agent_sdk._types import ToolCallError, ToolDefinition, Tools
 
 @dataclass(frozen=True)
 class _Err(Exception):
-    """Simulates componentize_py_types.Err for native tests."""
+    """Simulates a host Err(str) for native tests."""
 
     value: str
 
@@ -57,14 +57,14 @@ class TestToolCall:
 class TestToolList:
     def test_returns_tool_definitions(self):
         @dataclass
-        class WitToolDef:
+        class MockToolDef:
             name: str
             description: str
             input_schema: str
 
         mock_list = MagicMock(
             return_value=[
-                WitToolDef(
+                MockToolDef(
                     name="search",
                     description="Search the web",
                     input_schema=json.dumps({"type": "object"}),
@@ -90,15 +90,15 @@ class TestToolList:
 
     def test_multiple_tools(self):
         @dataclass
-        class WitToolDef:
+        class MockToolDef:
             name: str
             description: str
             input_schema: str
 
         mock_list = MagicMock(
             return_value=[
-                WitToolDef(name="a", description="Tool A", input_schema="{}"),
-                WitToolDef(name="b", description="Tool B", input_schema="{}"),
+                MockToolDef(name="a", description="Tool A", input_schema="{}"),
+                MockToolDef(name="b", description="Tool B", input_schema="{}"),
             ]
         )
         tools = Tools(call_tool=MagicMock(), list_tools=mock_list)

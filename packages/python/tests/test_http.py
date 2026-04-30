@@ -1,6 +1,6 @@
 """Tests for Http wrapper — ctx.http.fetch().
 
-componentize-py unwraps result<T, E>: Ok returns T directly, Err raises
+The host unwraps result<T, E>: Ok returns T directly, Err raises
 an Err(str) exception with a .value attribute.
 """
 
@@ -15,7 +15,7 @@ from friday_agent_sdk._types import Http, HttpError, HttpResponse
 
 @dataclass(frozen=True)
 class _Err(Exception):
-    """Simulates componentize_py_types.Err for native tests."""
+    """Simulates a host Err(str) for native tests."""
 
     value: str
 

@@ -146,4 +146,4 @@ The `data` parameter accepts either a dict (JSON-serialised) or string.
 ## See also
 
 - [API reference: ctx.stream](../reference/stream-capability.md)
-- [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging details
+- [How Friday Agents Work](../explanation/how-agents-work.md) — NATS subprocess protocol details

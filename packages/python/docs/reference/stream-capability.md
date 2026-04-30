@@ -187,4 +187,4 @@ Custom types can be emitted via `emit()` but may not have UI handlers.
 ## See also
 
 - [How to Stream Progress](../how-to/stream-progress.md) — Task-oriented guide
-- [How Friday Agents Work](../explanation/how-agents-work.md) — JSPI async bridging
+- [How Friday Agents Work](../explanation/how-agents-work.md) — NATS subprocess protocol
