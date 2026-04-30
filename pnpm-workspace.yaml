@@ -12,6 +12,8 @@ catalog:
 overrides:
   vite: "catalog:"
   vitest: "catalog:"
+  postcss: "^8.5.10"
+  "@voidzero-dev/vite-plus-test>vite": "^8.0.5"
 peerDependencyRules:
   allowAny:
     - vite
