@@ -4,9 +4,15 @@ Write AI agents in Python that run inside the Friday platform. Agents call LLMs,
 
 ## Prerequisites
 
-- Python 3.12+ installed locally
-- The Friday daemon running
-- An Anthropic API key (or another supported LLM provider) configured in the platform
+- Python 3.12+
+- The Friday daemon and `atlas` CLI — install via [friday-platform/friday-studio](https://github.com/friday-platform/friday-studio).
+  Follow that repo's quickstart to clone, install, configure an LLM provider key,
+  and run `deno task atlas daemon start --detached`. Verify it's up:
+  ```bash
+  curl -sf http://localhost:8080/health && echo "  daemon ok"
+  ```
+- An LLM provider API key (Anthropic, OpenAI, or Google) configured in the
+  daemon's `.env` — see Friday Studio's `.env.example` for the full list.
 
 ## Quickstart
 
@@ -14,7 +20,7 @@ Install the SDK:
 
 ```bash
 cd packages/python
-pip install -e .  # or uv pip install -e .
+uv pip install -e .   # or: pip install -e .
 ```
 
 Create an agent directory:

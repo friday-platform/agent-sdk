@@ -29,6 +29,11 @@ __pycache__/
 .pytest_cache/
 .venv/
 
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
 # AI agent worktrees
 .claude/worktrees/
 
