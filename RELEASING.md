@@ -36,11 +36,11 @@ git tag v0.1.1 && git push origin v0.1.1                # real release
    └─────────────────┘  └─────────────────┘
 ```
 
-| Component                    | Trigger                       | Publishes to | GitHub env |
-| ---------------------------- | ----------------------------- | ------------ | ---------- |
-| `scripts/bump-version.py`    | Manual                        | —            | —          |
-| `.github/workflows/release-test.yml` | Push of `v*-test*` tag, or `workflow_dispatch` | TestPyPI | `testpypi` |
-| `.github/workflows/release.yml`      | Push of `v*` tag (excl. `-test*`)              | PyPI     | `pypi`     |
+| Component                            | Trigger                                        | Publishes to | GitHub env |
+| ------------------------------------ | ---------------------------------------------- | ------------ | ---------- |
+| `scripts/bump-version.py`            | Manual                                         | —            | —          |
+| `.github/workflows/release-test.yml` | Push of `v*-test*` tag, or `workflow_dispatch` | TestPyPI     | `testpypi` |
+| `.github/workflows/release.yml`      | Push of `v*` tag (excl. `-test*`)              | PyPI         | `pypi`     |
 
 Both publish workflows authenticate via **OIDC trusted publishing** — no API tokens stored anywhere.
 
@@ -80,16 +80,16 @@ python3 scripts/bump-version.py               # patch bump (default)
 
 Flags:
 
-| Flag           | Effect                                             |
-| -------------- | -------------------------------------------------- |
-| (none)         | Patch bump: `X.Y.Z` → `X.Y.Z+1`                    |
-| `--minor`      | `X.Y.Z` → `X.Y+1.0`                                |
-| `--major`      | `X.Y.Z` → `X+1.0.0`                                |
-| `--set 1.2.3`  | Explicit version                                   |
-| `--dry-run`    | Print plan without modifying files                 |
-| `--commit`     | Also `git commit -am "chore(release): cut <new>"`  |
-| `--tag`        | Implies `--commit`, also `git tag v<new>`          |
-| `--push`       | Implies `--tag`, also pushes the branch and tag    |
+| Flag          | Effect                                            |
+| ------------- | ------------------------------------------------- |
+| (none)        | Patch bump: `X.Y.Z` → `X.Y.Z+1`                   |
+| `--minor`     | `X.Y.Z` → `X.Y+1.0`                               |
+| `--major`     | `X.Y.Z` → `X+1.0.0`                               |
+| `--set 1.2.3` | Explicit version                                  |
+| `--dry-run`   | Print plan without modifying files                |
+| `--commit`    | Also `git commit -am "chore(release): cut <new>"` |
+| `--tag`       | Implies `--commit`, also `git tag v<new>`         |
+| `--push`      | Implies `--tag`, also pushes the branch and tag   |
 
 The script edits four files in lockstep:
 
@@ -241,11 +241,11 @@ Then bump the patch and release a fixed version.
 
 The bump script keeps these in sync. If you ever edit them by hand, all four must agree:
 
-| File                                              | Field             |
-| ------------------------------------------------- | ----------------- |
-| `packages/python/pyproject.toml`                  | `project.version` |
-| `packages/python/friday_agent_sdk/__init__.py`    | `__version__`     |
-| `packages/python/package.json`                    | `version`         |
-| `package.json`                                    | `version`         |
+| File                                           | Field             |
+| ---------------------------------------------- | ----------------- |
+| `packages/python/pyproject.toml`               | `project.version` |
+| `packages/python/friday_agent_sdk/__init__.py` | `__version__`     |
+| `packages/python/package.json`                 | `version`         |
+| `package.json`                                 | `version`         |
 
 The release workflow checks the first two against the git tag and fails fast if they disagree.

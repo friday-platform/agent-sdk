@@ -116,7 +116,10 @@ def update_changelog(new_version: str) -> str | None:
         return None
     today = date.today().isoformat()
     new_heading = f"## [{new_version}] - {today}"
-    new_text = pattern.sub(f"## [Unreleased]\n\n{new_heading}", text, count=1)
+    # Trailing `\n` keeps the dated heading separated from whatever follows
+    # (the previous release heading or a section). Without it, `vp fmt`
+    # rejects the file with a "missing blank line before heading" error.
+    new_text = pattern.sub(f"## [Unreleased]\n\n{new_heading}\n", text, count=1)
     path.write_text(new_text)
     return new_heading
 
