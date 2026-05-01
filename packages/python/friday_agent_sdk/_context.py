@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+from collections.abc import Coroutine
+from typing import Any
 
 from friday_agent_sdk._types import (
     AgentContext,
@@ -17,7 +19,7 @@ from friday_agent_sdk._types import (
 )
 
 
-def _nats_call(coro, loop: asyncio.AbstractEventLoop, timeout: float) -> str:
+def _nats_call[T](coro: Coroutine[Any, Any, T], loop: asyncio.AbstractEventLoop, timeout: float) -> T:
     """Run a NATS coroutine from a sync context (thread pool worker).
 
     Uses run_coroutine_threadsafe so the main event loop services the

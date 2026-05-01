@@ -1,6 +1,7 @@
 """The @agent decorator — registers a handler function with metadata."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from friday_agent_sdk._registry import AgentRegistration, register_agent
 

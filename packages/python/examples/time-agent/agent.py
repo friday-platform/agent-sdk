@@ -1,5 +1,7 @@
 """Time agent — exercises MCP tool usage with mcp-server-time."""
 
+import contextlib
+
 from friday_agent_sdk import ToolCallError, agent, err, ok, run
 
 
@@ -85,10 +87,8 @@ def _handle_bad_tool(ctx):
 
 
 def _handle_bad_tool_then_now(ctx):
-    try:
+    with contextlib.suppress(ToolCallError):
         ctx.tools.call("nonexistent_tool", {})
-    except ToolCallError:
-        pass
     result = ctx.tools.call("get_current_time", {"timezone": "UTC"})
     return ok({"recovered": True, "utc_now": result})
 

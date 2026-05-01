@@ -6,6 +6,7 @@ then dispatches to handlers that call Bitbucket API via ctx.http.
 """
 
 import base64
+import contextlib
 import json
 import re
 import uuid
@@ -746,10 +747,8 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
 
         _bash(ctx, f"rm -f {askpass_path}")
     except RuntimeError as e:
-        try:
+        with contextlib.suppress(RuntimeError):
             _bash(ctx, f"rm -rf {clone_dir} {askpass_path}")
-        except RuntimeError:
-            pass
         return err(f"clone failed: {e}")
 
     # Fetch changed files via diffstat API
@@ -831,10 +830,8 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
         )
     except RuntimeError as e:
         # Cleanup on failure
-        try:
+        with contextlib.suppress(RuntimeError):
             _bash(ctx, f"rm -rf {clone_dir} {askpass_path}")
-        except RuntimeError:
-            pass
         return err(f"repo-clone failed: {e}")
 
 
@@ -876,10 +873,8 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
             }
         )
     except RuntimeError as e:
-        try:
+        with contextlib.suppress(RuntimeError):
             _bash(ctx, f"rm -f {askpass_path}")
-        except RuntimeError:
-            pass
         return err(f"repo-push failed: {e}")
 
 

@@ -45,10 +45,35 @@ target-version = "py312"
 line-length = 125
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
+# Adding a category should be a deliberate choice — every PR has to pass these.
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear (likely-bug patterns)
+  "UP",  # pyupgrade (modernize for the 3.12+ baseline)
+  "RUF", # ruff-specific rules
+  "SIM", # flake8-simplify
+]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["friday_agent_sdk"]
+# nats-py and other dependencies don't ship type stubs; treat their return
+# values as Any rather than failing the build.
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [dependency-groups]
-dev = ["pytest>=9.0.3", "ruff>=0.15.12"]
+dev = [
+    "mypy>=1.13",
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+]

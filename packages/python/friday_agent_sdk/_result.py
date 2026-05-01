@@ -1,7 +1,6 @@
 """Tagged union result types for agent handlers."""
 
 from dataclasses import dataclass
-from typing import Union
 
 
 @dataclass
@@ -48,7 +47,7 @@ class ErrResult:
     error: str
 
 
-AgentResult = Union[OkResult, ErrResult]
+AgentResult = OkResult | ErrResult
 
 
 def ok(data: object, extras: AgentExtras | None = None) -> OkResult:

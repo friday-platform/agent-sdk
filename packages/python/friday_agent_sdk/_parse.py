@@ -60,7 +60,7 @@ def parse_input(prompt: str) -> dict: ...
 
 
 @overload
-def parse_input(prompt: str, schema: type[T]) -> T: ...
+def parse_input[T](prompt: str, schema: type[T]) -> T: ...
 
 
 def parse_input(prompt: str, schema: type | None = None) -> Any:
@@ -82,7 +82,7 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
     if schema is not None and not dataclasses.is_dataclass(schema):
         raise TypeError(f"{schema.__name__} is not a dataclass")
 
-    def _try_parse(json_str: str) -> dict | None:
+    def _try_parse(json_str: str) -> object | None:
         parsed = json.loads(json_str)
         if not isinstance(parsed, dict):
             return None
@@ -130,7 +130,7 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
     raise ValueError(f"No valid JSON object found in prompt. Prompt starts with: {prompt[:200]}")
 
 
-def parse_operation(prompt: str, schemas: dict[str, type[T]]) -> T:
+def parse_operation[T](prompt: str, schemas: dict[str, type[T]]) -> T:
     """Extract an operation config from an enriched prompt.
 
     Like parse_input, but filters to JSON objects containing an "operation"
