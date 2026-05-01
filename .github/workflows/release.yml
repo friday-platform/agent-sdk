@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build + publish to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/friday-agent-sdk
+    permissions:
+      contents: write # create GitHub release
+      id-token: write # PyPI trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      # Fail fast if the tag and the in-tree versions disagree. Versions live
+      # in three places (pyproject.toml, __init__.py, root package.json) and
+      # CONTRIBUTING.md instructs bumping all three before tagging.
+      - name: Verify tag matches package version
+        working-directory: packages/python
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          PYPROJECT=$(grep -E '^version = "' pyproject.toml | sed -E 's/.*"(.*)"/\1/')
+          INIT=$(grep -E '^__version__ = "' friday_agent_sdk/__init__.py | sed -E 's/.*"(.*)"/\1/')
+          echo "tag=$TAG pyproject=$PYPROJECT __init__=$INIT"
+          [ "$TAG" = "$PYPROJECT" ] || { echo "tag $TAG != pyproject $PYPROJECT" >&2; exit 1; }
+          [ "$TAG" = "$INIT" ]      || { echo "tag $TAG != __init__ $INIT"      >&2; exit 1; }
+
+      - name: Build sdist + wheel
+        working-directory: packages/python
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python/dist
+          print-hash: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: packages/python/dist/*
