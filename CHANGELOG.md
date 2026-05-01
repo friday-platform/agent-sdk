@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-30
+
+### Changed
+
+- Tightened the `writing-friday-python-agents` skill description so it loads only when authoring a user agent is already the task, not when deciding whether to author one.
+
+### Added
+
+- `RELEASING.md` maintainer guide covering the bump-version + tag-driven TestPyPI/PyPI release flow.
+
 ## [0.1.1] - 2026-04-30
 
 ### Fixed
