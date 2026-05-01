@@ -16,11 +16,12 @@ Write AI agents in Python that run inside the Friday platform. Agents call LLMs,
 
 ## Quickstart
 
-Install the SDK:
+Install the SDK from PyPI:
 
 ```bash
-cd packages/python
-uv pip install -e .   # or: pip install -e .
+pip install friday-agent-sdk
+# or, with uv:
+uv add friday-agent-sdk
 ```
 
 Create an agent directory:
@@ -84,11 +85,20 @@ curl -s -X POST http://localhost:5200/api/agents/my-analyzer/run \
 
 ## Installation
 
-The SDK is a normal Python package. Install it for development and execution:
+The SDK is published to PyPI as [`friday-agent-sdk`](https://pypi.org/project/friday-agent-sdk/):
+
+```bash
+pip install friday-agent-sdk
+# or with uv
+uv add friday-agent-sdk
+```
+
+To install from a clone of this repo (e.g. when working on the SDK itself):
 
 ```bash
 cd packages/python
-pip install -e .
+uv sync --all-extras --dev
+# or: pip install -e .
 ```
 
 ## Examples
@@ -170,7 +180,7 @@ Your `@agent` decorator metadata failed validation. Required fields: `id`, `vers
 The agent may not be signaling readiness before the daemon sends the execute request. Verify `run()` is called.
 
 **Import errors in IDE**
-The `friday_agent_sdk` must be installed locally (`pip install -e .`) for type checking and autocomplete.
+The `friday_agent_sdk` package must be installed in your active Python environment (`pip install friday-agent-sdk`, or `pip install -e .` when working from a clone) for type checking and autocomplete.
 
 ## License
 

@@ -18,8 +18,12 @@ This is a monorepo. The product is the Python package under
 
 ## Quick start
 
-See [`packages/python/README.md`](packages/python/README.md) to install the
-Python SDK and run your first agent.
+```bash
+pip install friday-agent-sdk
+```
+
+Then see [`packages/python/README.md`](packages/python/README.md) to write
+and run your first agent.
 
 ## Contributing
 
