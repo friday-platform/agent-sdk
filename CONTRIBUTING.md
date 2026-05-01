@@ -82,6 +82,23 @@ CI runs the same checks on every pull request — see
 - Make sure CI is green before requesting review.
 - Be responsive to review feedback; we aim to review within a few business days.
 
+## Releasing
+
+The Python SDK is the only published artifact. Versions are kept in sync across:
+
+- `packages/python/pyproject.toml` (`project.version`)
+- `packages/python/friday_agent_sdk/__init__.py` (`__version__`)
+- `package.json` (root workspace version, kept in sync for clarity)
+
+To cut a release:
+
+1. Bump all three version fields to the new version (semver — `MAJOR.MINOR.PATCH`).
+2. Move `[Unreleased]` entries in [CHANGELOG.md](CHANGELOG.md) under a new dated heading
+   (e.g. `## [0.2.0] - 2026-05-15`).
+3. Open a PR titled `release: vX.Y.Z`, merge once green.
+4. Tag the merge commit `vX.Y.Z` and push: `git tag v0.2.0 && git push origin v0.2.0`.
+5. The release workflow publishes to PyPI via trusted publishing (OIDC).
+
 ## Project Layout
 
 ```

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-30
+
+Initial public release. **Alpha — APIs may change.**
+
 ### Changed
 
 - Agent entry point changed from `_bridge.Agent` subclass to a plain `run()` function that receives the agent context as an argument. All examples and tutorials updated.
@@ -17,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `friday_agent_sdk.__version__` exported for runtime introspection.
 - Capabilities are now always initialized. `ctx.llm`, `ctx.http`, `ctx.tools`, and `ctx.stream` are guaranteed available and no longer require null checks.
 
 ### Removed
