@@ -7,7 +7,7 @@ the AsyncMock-based tests in `test_context_nats.py` which prove the SDK's
 threading and JSON contracts in isolation.
 
 Skipped automatically if `nats-server` is not on PATH (so local dev without
-the binary still passes). CI installs it explicitly.
+the binary still passes). CI installs it explicitly (see .github/workflows/ci.yml).
 """
 
 import asyncio
