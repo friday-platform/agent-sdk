@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1] - 2026-04-30
 
+### Fixed
+
+- ReDoS in `jira-agent` markdown link regex.
+
+### Added
+
+- `scripts/bump-version.py` for synchronized version bumps across the SDK and examples.
+- TestPyPI dry-run release workflow.
+- READMEs for each example agent (`echo-agent`, `llm-http-agent`, `jira-agent`).
+- mypy type-checking and built-wheel smoke test in CI.
+- Real-NATS round-trip tests covering `build_context` end-to-end (alongside the existing mocked tests).
+- Alpha banner and CI/PyPI/license badges in the top-level README; clarified that the SDK requires a running Friday daemon.
+
+### Changed
+
+- Broadened ruff ruleset and applied autofixes across the Python package.
+- Bumped pinned `nats-server` in CI to v2.14.0.
+
 ## [0.1.0] - 2026-04-30
 
 Initial public release. **Alpha — APIs may change.**
