@@ -1,5 +1,8 @@
 # Friday Agent SDK
 
+[![CI](https://github.com/friday-platform/agent-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/friday-platform/agent-sdk/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Write AI agents in Python (and soon other languages) that run inside the
 [Friday platform](https://github.com/friday-platform/friday-studio). Agents call
 LLMs, make HTTP requests, and use MCP tools through the host — no API keys or
