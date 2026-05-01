@@ -149,14 +149,14 @@ protocols are the contract, the `Fake*` classes are convenience.
 
 ## What goes in `make_test_context()`
 
-| Argument        | Type                | Default               |
-| --------------- | ------------------- | --------------------- |
-| `env`           | `dict[str, str]`    | `{}`                  |
-| `config`        | `dict`              | `{}`                  |
-| `skills`        | `list[Skill...]`    | `[]`                  |
-| `session`       | `SessionData?`      | `None`                |
-| `output_schema` | `dict?`             | `None`                |
-| `llm`           | `LlmProtocol?`      | `FakeLlm()`           |
-| `http`          | `HttpProtocol?`     | `FakeHttp()`          |
-| `tools`         | `ToolsProtocol?`    | `FakeTools()`         |
-| `stream`        | `StreamProtocol?`   | `FakeStream()`        |
+| Argument        | Type              | Default        |
+| --------------- | ----------------- | -------------- |
+| `env`           | `dict[str, str]`  | `{}`           |
+| `config`        | `dict`            | `{}`           |
+| `skills`        | `list[Skill...]`  | `[]`           |
+| `session`       | `SessionData?`    | `None`         |
+| `output_schema` | `dict?`           | `None`         |
+| `llm`           | `LlmProtocol?`    | `FakeLlm()`    |
+| `http`          | `HttpProtocol?`   | `FakeHttp()`   |
+| `tools`         | `ToolsProtocol?`  | `FakeTools()`  |
+| `stream`        | `StreamProtocol?` | `FakeStream()` |
