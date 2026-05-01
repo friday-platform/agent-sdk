@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Capability protocols `LlmProtocol`, `HttpProtocol`, `ToolsProtocol`, and `StreamProtocol` (re-exported from `friday_agent_sdk`). The `AgentContext` capability fields are now typed as protocols so agents can be unit-tested by substituting any object that satisfies the protocol.
+- New public module `friday_agent_sdk.testing` with `make_test_context()` plus `FakeLlm`, `FakeHttp`, `FakeTools`, and `FakeStream` helpers. `make_test_context()` is also re-exported at the top level for convenience.
+
 ## [0.1.0] - 2026-04-30
 
 Initial public release. **Alpha — APIs may change.**

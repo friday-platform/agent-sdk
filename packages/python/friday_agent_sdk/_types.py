@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 
 class ToolCallError(Exception):
@@ -244,6 +244,77 @@ class SessionData:
     datetime: str
 
 
+# ---------------------------------------------------------------------------
+# Capability protocols — structural types so users can substitute test doubles
+# (or their own gateways) for ctx.llm / ctx.http / ctx.tools / ctx.stream.
+#
+# Concrete implementations: ``Llm``/``Http``/``Tools``/``StreamEmitter`` (the
+# NATS-backed wrappers above) and the ``Fake*`` classes in
+# ``friday_agent_sdk.testing``.
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ToolsProtocol(Protocol):
+    """Structural type for the tools capability (`ctx.tools`)."""
+
+    def call(self, name: str, args: dict) -> dict: ...
+
+    def list(self) -> list[ToolDefinition]: ...
+
+
+@runtime_checkable
+class LlmProtocol(Protocol):
+    """Structural type for the LLM capability (`ctx.llm`)."""
+
+    def generate(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        provider_options: dict | None = None,
+    ) -> LlmResponse: ...
+
+    def generate_object(
+        self,
+        messages: list[dict[str, str]],
+        schema: dict,
+        *,
+        model: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        provider_options: dict | None = None,
+    ) -> LlmResponse: ...
+
+
+@runtime_checkable
+class HttpProtocol(Protocol):
+    """Structural type for the HTTP capability (`ctx.http`)."""
+
+    def fetch(
+        self,
+        url: str,
+        *,
+        method: str = "GET",
+        headers: dict[str, str] | None = None,
+        body: str | None = None,
+        timeout_ms: int | None = None,
+    ) -> HttpResponse: ...
+
+
+@runtime_checkable
+class StreamProtocol(Protocol):
+    """Structural type for the stream-emitter capability (`ctx.stream`)."""
+
+    def emit(self, event_type: str, data: dict | str) -> None: ...
+
+    def progress(self, content: str, *, tool_name: str | None = None) -> None: ...
+
+    def intent(self, content: str) -> None: ...
+
+
 def _uninitialized_llm():
     """Factory for uninitialized LLM stub."""
 
@@ -298,8 +369,12 @@ class SkillDefinition:
 class AgentContext:
     """Execution context passed to agent handlers.
 
-    Capability fields (llm, tools, http, stream) are always non-None.
-    Defaults are safe stubs that raise if called outside the host environment.
+    Capability fields (`llm`, `tools`, `http`, `stream`) are typed as
+    structural protocols so they can be substituted for tests or custom
+    gateways. The default factories return the production NATS-backed
+    classes pre-wired to raise a clear error if called outside the host
+    environment — for unit tests prefer
+    `friday_agent_sdk.testing.make_test_context()`.
     """
 
     env: dict[str, str] = field(default_factory=dict)
@@ -307,7 +382,7 @@ class AgentContext:
     skills: list[SkillDefinition] = field(default_factory=list)
     session: SessionData | None = None
     output_schema: dict | None = None
-    tools: Tools = field(default_factory=_uninitialized_tools)
-    llm: Llm = field(default_factory=_uninitialized_llm)
-    http: Http = field(default_factory=_uninitialized_http)
-    stream: StreamEmitter = field(default_factory=_uninitialized_stream)
+    tools: ToolsProtocol = field(default_factory=_uninitialized_tools)
+    llm: LlmProtocol = field(default_factory=_uninitialized_llm)
+    http: HttpProtocol = field(default_factory=_uninitialized_http)
+    stream: StreamProtocol = field(default_factory=_uninitialized_stream)
