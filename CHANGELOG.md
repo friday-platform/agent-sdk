@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** `ctx.stream.emit()` / `ctx.stream.progress()` / `ctx.stream.intent()` now publish on `agents.{sessionId}.stream` instead of `sessions.{sessionId}.events`. The previous subject was the durable JetStream session bus, so SDK chunks polluted the lifecycle replay that the host's session-detail page consumes — a strict-parse mismatch caused completed user-agent runs to render as "Running…" indefinitely. Coordinated host-side change required: atlasd must subscribe on the new subject. Bumping the daemon's `bundledAgentSDKVersion` pin to a release containing this change without the matching daemon update will silently drop all stream events.
+
 ## [0.1.4] - 2026-04-30
 
 ### Changed

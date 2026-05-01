@@ -95,7 +95,7 @@ def build_context(
 
     async def _stream_publish(event_type: str, payload: str) -> None:
         chunk = json.dumps({"type": event_type, "data": json.loads(payload) if payload.startswith(("{", "[")) else payload})
-        await nc.publish(f"sessions.{session_id}.events", chunk.encode())
+        await nc.publish(f"agents.{session_id}.stream", chunk.encode())
 
     def llm_generate_sync(request_json: str) -> str:
         return _nats_call(_llm_request(request_json), loop, timeout=130)
