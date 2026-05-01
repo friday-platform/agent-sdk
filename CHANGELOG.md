@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-30
+
+### Changed
+
+- Expanded the `writing-friday-python-agents` skill with a Memory section covering the platform-injected `memory_save` / `memory_read` tools: append-per-fact semantics, the read-concat-write footgun, `ToolCallError` handling, and the narrative-strategy requirement.
+
 ## [0.1.2] - 2026-04-30
 
 ### Changed
