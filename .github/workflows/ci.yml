@@ -22,7 +22,7 @@ jobs:
       - run: vp test --passWithNoTests
 
   python:
-    name: Python ${{ matrix.python-version }} (ruff + pytest)
+    name: Python ${{ matrix.python-version }} (ruff + mypy + pytest)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -44,4 +44,45 @@ jobs:
       - run: uv sync --all-extras --dev
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      - run: uv run mypy
       - run: uv run pytest
+
+  package-smoke:
+    name: Package smoke test (build + install wheel)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/python
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      # Build sdist + wheel from the source tree, then install the wheel into a
+      # fresh venv. Catches packaging metadata, py.typed inclusion, and
+      # missing-package bugs that editable installs miss.
+      - run: uv build
+      - name: Install built wheel and import public API
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --upgrade pip
+          /tmp/smoke/bin/pip install dist/*.whl
+          /tmp/smoke/bin/python - <<'PY'
+          import friday_agent_sdk
+          from friday_agent_sdk import (
+              __version__,
+              agent, run, ok, err,
+              AgentContext, AgentResult, AgentExtras,
+              ArtifactRef, OutlineRef, OkResult, ErrResult,
+              Http, HttpError, HttpResponse,
+              Llm, LlmError, LlmResponse,
+              SessionData, SkillDefinition, StreamEmitter,
+              ToolCallError, ToolDefinition, Tools,
+              parse_input, parse_operation,
+          )
+          assert __version__, "friday_agent_sdk.__version__ should be set"
+          print(f"OK: friday-agent-sdk {__version__} installs and imports cleanly")
+          PY
