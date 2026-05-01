@@ -15,12 +15,12 @@ configured in the **daemon's** `.env` — the agent itself never reads keys.
 
 ## Prompt prefixes
 
-| Prefix       | Path                                                          |
-| ------------ | ------------------------------------------------------------- |
-| `llm:`       | LLM happy path (`model="test-model"`)                         |
-| `llm-fail:`  | LLM error path (`model="fail-model"`, expects `LlmError`)     |
-| `http:`      | HTTP happy path (fetches `https://example.com/<rest>`)        |
-| `http-fail:` | HTTP error path (fetches `https://fail.example.com/<rest>`)   |
+| Prefix       | Path                                                        |
+| ------------ | ----------------------------------------------------------- |
+| `llm:`       | LLM happy path (`model="test-model"`)                       |
+| `llm-fail:`  | LLM error path (`model="fail-model"`, expects `LlmError`)   |
+| `http:`      | HTTP happy path (fetches `https://example.com/<rest>`)      |
+| `http-fail:` | HTTP error path (fetches `https://fail.example.com/<rest>`) |
 
 Anything without a recognised prefix returns an `err()` result.
 

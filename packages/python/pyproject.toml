@@ -47,12 +47,12 @@ line-length = 125
 [tool.ruff.lint]
 # Adding a category should be a deliberate choice — every PR has to pass these.
 select = [
-  "E",   # pycodestyle errors
-  "W",   # pycodestyle warnings
-  "F",   # pyflakes
-  "I",   # isort
-  "B",   # flake8-bugbear (likely-bug patterns)
-  "UP",  # pyupgrade (modernize for the 3.12+ baseline)
+  "E", # pycodestyle errors
+  "W", # pycodestyle warnings
+  "F", # pyflakes
+  "I", # isort
+  "B", # flake8-bugbear (likely-bug patterns)
+  "UP", # pyupgrade (modernize for the 3.12+ baseline)
   "RUF", # ruff-specific rules
   "SIM", # flake8-simplify
 ]
@@ -72,8 +72,4 @@ no_implicit_optional = true
 testpaths = ["tests"]
 
 [dependency-groups]
-dev = [
-    "mypy>=1.13",
-    "pytest>=9.0.3",
-    "ruff>=0.15.12",
-]
+dev = ["mypy>=1.13", "pytest>=9.0.3", "ruff>=0.15.12"]
