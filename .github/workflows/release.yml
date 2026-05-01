@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+      - "!v*-test*" # dry-run tags are handled by release-test.yml
 
 permissions:
   contents: read

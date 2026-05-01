@@ -90,14 +90,31 @@ The Python SDK is the only published artifact. Versions are kept in sync across:
 - `packages/python/friday_agent_sdk/__init__.py` (`__version__`)
 - `package.json` (root workspace version, kept in sync for clarity)
 
-To cut a release:
+To cut a release, use the [`scripts/bump-version.py`](scripts/bump-version.py) helper:
 
-1. Bump all three version fields to the new version (semver — `MAJOR.MINOR.PATCH`).
-2. Move `[Unreleased]` entries in [CHANGELOG.md](CHANGELOG.md) under a new dated heading
-   (e.g. `## [0.2.0] - 2026-05-15`).
-3. Open a PR titled `release: vX.Y.Z`, merge once green.
-4. Tag the merge commit `vX.Y.Z` and push: `git tag v0.2.0 && git push origin v0.2.0`.
-5. The release workflow publishes to PyPI via trusted publishing (OIDC).
+```bash
+# Defaults to a patch bump; use --minor, --major, or --set X.Y.Z to override.
+python3 scripts/bump-version.py --dry-run   # preview the plan
+python3 scripts/bump-version.py             # update files + CHANGELOG
+git diff                                    # review, edit CHANGELOG section
+git commit -am "chore(release): cut X.Y.Z"
+git tag vX.Y.Z
+git push && git push origin vX.Y.Z
+```
+
+The script can also do the commit, tag, and push for you in one shot:
+
+```bash
+python3 scripts/bump-version.py --push      # patch bump + commit + tag + push
+```
+
+It edits all four version-tracking files (`packages/python/pyproject.toml`,
+`packages/python/friday_agent_sdk/__init__.py`, `packages/python/package.json`,
+and root `package.json`) plus inserts a dated heading in `CHANGELOG.md`.
+
+Once a `vX.Y.Z` tag is pushed, the release workflow publishes to PyPI via
+trusted publishing (OIDC). For a dry-run validation, push a `vX.Y.Z-test1`
+tag to trigger `release-test.yml`, which publishes to TestPyPI instead.
 
 ## Project Layout
 
