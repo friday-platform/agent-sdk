@@ -1,0 +1,84 @@
+name: Bug report
+description: Something in the SDK is broken or behaves unexpectedly.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in the sections below — the more detail, the faster we can fix it.
+
+        For security issues, do **not** open a public issue. See [SECURITY.md](https://github.com/friday-platform/agent-sdk/blob/main/SECURITY.md).
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, concise description of the bug.
+      placeholder: When I do X, Y happens — but I expected Z.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal steps or code that reproduce the bug. Trim to the smallest possible example.
+      render: python
+      placeholder: |
+        from friday_agent_sdk import agent, ok, run
+
+        @agent(id="repro", version="0.1.0")
+        def execute(prompt: str, ctx):
+            ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include any error message, traceback, or unexpected output.
+    validations:
+      required: true
+  - type: input
+    id: sdk-version
+    attributes:
+      label: friday-agent-sdk version
+      description: Output of `pip show friday-agent-sdk` or `uv pip show friday-agent-sdk`.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python --version`.
+      placeholder: "3.12.7"
+    validations:
+      required: true
+  - type: input
+    id: daemon-version
+    attributes:
+      label: Friday daemon version (if relevant)
+      description: Skip if the bug reproduces without the daemon (e.g. parsing or type errors).
+      placeholder: "atlas --version"
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 14.5 / Ubuntu 24.04 / ...
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, related issues, anything else.
+    validations:
+      required: false

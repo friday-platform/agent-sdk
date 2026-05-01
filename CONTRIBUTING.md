@@ -11,9 +11,9 @@ participating, you agree to uphold it.
 
 ## Reporting Bugs and Requesting Features
 
-- **Bugs:** open a [bug report](https://github.com/friday-platform/agent-sdk/issues/new?template=bug_report.md)
+- **Bugs:** open a [bug report](https://github.com/friday-platform/agent-sdk/issues/new?template=bug_report.yml)
   with reproduction steps and your environment details.
-- **Features:** open a [feature request](https://github.com/friday-platform/agent-sdk/issues/new?template=feature_request.md)
+- **Features:** open a [feature request](https://github.com/friday-platform/agent-sdk/issues/new?template=feature_request.yml)
   describing the use case before writing code, so we can discuss the design.
 - **Security issues:** see [SECURITY.md](SECURITY.md) — do not open public issues.
 

@@ -1,0 +1,55 @@
+name: Feature request
+description: Suggest a new capability or improvement for the SDK.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe the use case before proposing a solution — it helps us pick the right design.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do? What's painful or impossible today?
+      placeholder: I'm building an agent that needs to ... but the SDK currently ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: If you have one — API sketch, behaviour, or pseudocode is fine. Skip if you'd rather discuss the problem first.
+      render: python
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried, other libraries that solve this, etc.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of the SDK?
+      multiple: true
+      options:
+        - Agent decorator / runtime
+        - LLM capability (ctx.llm)
+        - HTTP capability (ctx.http)
+        - Tools / MCP capability (ctx.tools)
+        - Streaming (ctx.stream)
+        - Input parsing (parse_input / parse_operation)
+        - Result types (ok / err)
+        - Examples / docs
+        - Other / not sure
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+    validations:
+      required: false
