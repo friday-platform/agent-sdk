@@ -16,24 +16,24 @@ inline comments, follow-ups) against the GitHub REST API.
 
 **Required env vars:**
 
-| Var        | Purpose                                                          |
-| ---------- | ---------------------------------------------------------------- |
+| Var        | Purpose                                                                |
+| ---------- | ---------------------------------------------------------------------- |
 | `GH_TOKEN` | GitHub personal access token (or fine-grained token) with `repo` scope |
 
 ## Operations
 
 The prompt is JSON containing an `operation` discriminator plus operation-specific fields. All operations take a `pr_url` of the form `https://github.com/owner/repo/pull/123`.
 
-| `operation`         | Extra fields                                                          |
-| ------------------- | --------------------------------------------------------------------- |
-| `clone`             | —                                                                     |
-| `pr-view`           | optional `fields`                                                     |
-| `pr-diff`           | optional `name_only` (bool) — return filenames only                   |
-| `pr-files`          | —                                                                     |
-| `pr-read-threads`   | —                                                                     |
-| `pr-review`         | `body` — markdown summary comment                                     |
-| `pr-inline-review`  | `verdict`, `summary`, `findings`, optional `commit_id`                |
-| `pr-post-followup`  | `summary`, optional `thread_replies`, `new_findings`, `commit_id`     |
+| `operation`        | Extra fields                                                      |
+| ------------------ | ----------------------------------------------------------------- |
+| `clone`            | —                                                                 |
+| `pr-view`          | optional `fields`                                                 |
+| `pr-diff`          | optional `name_only` (bool) — return filenames only               |
+| `pr-files`         | —                                                                 |
+| `pr-read-threads`  | —                                                                 |
+| `pr-review`        | `body` — markdown summary comment                                 |
+| `pr-inline-review` | `verdict`, `summary`, `findings`, optional `commit_id`            |
+| `pr-post-followup` | `summary`, optional `thread_replies`, `new_findings`, `commit_id` |
 
 A `finding` is an object with `file`, `line`, `severity`, `category`, `title`,
 `description`, and optional `start_line` / `suggestion`.

@@ -23,10 +23,10 @@ and streams progress events along the way. Read this last.
 
 **Required env vars:**
 
-| Var                  | Purpose                                                                |
-| -------------------- | ---------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`  | Required — Claude API access for the underlying claude-code provider   |
-| `GH_TOKEN`           | Optional — needed only if the prompt asks the agent to clone a repo    |
+| Var                 | Purpose                                                              |
+| ------------------- | -------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Required — Claude API access for the underlying claude-code provider |
+| `GH_TOKEN`          | Optional — needed only if the prompt asks the agent to clone a repo  |
 
 ## Prompt
 

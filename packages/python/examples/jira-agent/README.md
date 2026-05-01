@@ -14,25 +14,25 @@ Good template for any "many-operations-against-one-vendor-API" agent.
 
 **Required env vars:**
 
-| Var               | Purpose                                                                                |
-| ----------------- | -------------------------------------------------------------------------------------- |
-| `JIRA_SITE`       | Your Jira host, e.g. `your-company.atlassian.net`                                      |
-| `JIRA_EMAIL`      | Jira account email used for Basic Auth                                                 |
-| `JIRA_API_TOKEN`  | API token from <https://id.atlassian.com/manage-profile/security/api-tokens>           |
+| Var              | Purpose                                                                      |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `JIRA_SITE`      | Your Jira host, e.g. `your-company.atlassian.net`                            |
+| `JIRA_EMAIL`     | Jira account email used for Basic Auth                                       |
+| `JIRA_API_TOKEN` | API token from <https://id.atlassian.com/manage-profile/security/api-tokens> |
 
 ## Operations
 
 The prompt is JSON containing an `operation` discriminator plus operation-specific
 fields:
 
-| `operation`         | Required fields                                                          |
-| ------------------- | ------------------------------------------------------------------------ |
-| `issue-view`        | `issue_key`                                                              |
-| `issue-search`      | `jql`, optional `max_results` (max 100)                                  |
-| `issue-create`      | `project_key`, `summary`, optional `description`, `issue_type`, `labels`, `priority` |
-| `issue-update`      | `issue_key`, optional `summary`, `description`, `labels`, `priority`     |
-| `issue-comment`     | `issue_key`, `body` (supports `[text](url)` Markdown links)              |
-| `issue-transition`  | `issue_key`, `transition_name` (case-insensitive match)                  |
+| `operation`        | Required fields                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `issue-view`       | `issue_key`                                                                          |
+| `issue-search`     | `jql`, optional `max_results` (max 100)                                              |
+| `issue-create`     | `project_key`, `summary`, optional `description`, `issue_type`, `labels`, `priority` |
+| `issue-update`     | `issue_key`, optional `summary`, `description`, `labels`, `priority`                 |
+| `issue-comment`    | `issue_key`, `body` (supports `[text](url)` Markdown links)                          |
+| `issue-transition` | `issue_key`, `transition_name` (case-insensitive match)                              |
 
 ## Run it
 

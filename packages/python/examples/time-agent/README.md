@@ -16,14 +16,14 @@ uses it to launch `mcp-server-time`).
 
 ## Prompt commands
 
-| Prompt                            | Path                                                          |
-| --------------------------------- | ------------------------------------------------------------- |
-| `discover`                        | Lists all MCP tool names visible to the agent                 |
-| `now`                             | Calls `get_current_time` for UTC                              |
-| `convert <time> <from> to <to>`   | Calls `convert_time`, e.g. `convert 12:00 UTC to America/New_York` |
-| `combo`                           | Chains `get_current_time` then `convert_time`                 |
-| `bad-tool`                        | Tries a nonexistent tool, returns the `ToolCallError` as `ok` |
-| `bad-tool-then-now`               | Recovers after a failing call and continues with `now`        |
+| Prompt                          | Path                                                               |
+| ------------------------------- | ------------------------------------------------------------------ |
+| `discover`                      | Lists all MCP tool names visible to the agent                      |
+| `now`                           | Calls `get_current_time` for UTC                                   |
+| `convert <time> <from> to <to>` | Calls `convert_time`, e.g. `convert 12:00 UTC to America/New_York` |
+| `combo`                         | Chains `get_current_time` then `convert_time`                      |
+| `bad-tool`                      | Tries a nonexistent tool, returns the `ToolCallError` as `ok`      |
+| `bad-tool-then-now`             | Recovers after a failing call and continues with `now`             |
 
 ## Run it
 

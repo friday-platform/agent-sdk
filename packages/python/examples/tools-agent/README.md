@@ -13,10 +13,10 @@ progress, and propagating errors.
 
 ## Prompt prefixes
 
-| Prompt           | Path                                                                    |
-| ---------------- | ----------------------------------------------------------------------- |
-| any text         | Calls the `echo` tool with `{msg: prompt}`                              |
-| `fail:<reason>`  | Calls the `fail` tool to force a `ToolCallError` (returned as `err()`)  |
+| Prompt          | Path                                                                   |
+| --------------- | ---------------------------------------------------------------------- |
+| any text        | Calls the `echo` tool with `{msg: prompt}`                             |
+| `fail:<reason>` | Calls the `fail` tool to force a `ToolCallError` (returned as `err()`) |
 
 ## Run it
 

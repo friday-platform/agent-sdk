@@ -17,15 +17,15 @@ template — production agents shouldn't shell out for everything.
 
 The prompt is JSON like `{"action": "<name>", ...}`.
 
-| `action`         | What it runs                                                  |
-| ---------------- | ------------------------------------------------------------- |
-| `dump-prompt`    | Returns the raw prompt (first 2000 chars) — useful for debug  |
-| `list-tools`     | Returns the names of all tools visible to the agent           |
-| `echo`           | `echo hello`                                                  |
-| `exit-code`      | `exit 42` — verifies non-zero exit codes propagate            |
-| `cwd`            | `pwd` with `cwd: /tmp` — verifies working directory injection |
-| `env`            | `echo $QA_TEST_VAR` with `env: {QA_TEST_VAR: ...}`            |
-| `clone`          | Clones a repo from `repo_url`, lists files, cleans up         |
+| `action`      | What it runs                                                  |
+| ------------- | ------------------------------------------------------------- |
+| `dump-prompt` | Returns the raw prompt (first 2000 chars) — useful for debug  |
+| `list-tools`  | Returns the names of all tools visible to the agent           |
+| `echo`        | `echo hello`                                                  |
+| `exit-code`   | `exit 42` — verifies non-zero exit codes propagate            |
+| `cwd`         | `pwd` with `cwd: /tmp` — verifies working directory injection |
+| `env`         | `echo $QA_TEST_VAR` with `env: {QA_TEST_VAR: ...}`            |
+| `clone`       | Clones a repo from `repo_url`, lists files, cleans up         |
 
 ## Run it
 
