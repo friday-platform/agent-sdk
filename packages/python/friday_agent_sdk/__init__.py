@@ -1,6 +1,6 @@
 # friday-agent-sdk: Python SDK for authoring Friday agents
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 from friday_agent_sdk._bridge import run
 from friday_agent_sdk._decorator import agent

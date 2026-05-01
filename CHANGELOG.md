@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-04-30
+
+### Changed
+
+- Updated the `writing-friday-python-agents` skill to register and exec agents via the daemon HTTP API (`POST /api/agents/register`, `POST /api/agents/{id}/run`) instead of the removed `atlas agent` CLI commands.
+
 ## [0.1.3] - 2026-04-30
 
 ### Changed
