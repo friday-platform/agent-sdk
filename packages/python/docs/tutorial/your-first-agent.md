@@ -44,6 +44,11 @@ docker compose logs -f platform
 
 Press `Ctrl-C` to stop tailing. The platform keeps running in the background.
 
+> **Daemon ports.** This tutorial uses the **installer / Docker** ports shown above
+> (`:15200` for Studio, `:18080` for the daemon API). If you're running Friday from
+> source, your defaults are `:5200` and `:8080` instead — adjust each `curl` example
+> accordingly.
+
 ## Step 2: Install the SDK
 
 ```bash
@@ -146,7 +151,7 @@ atlas agent exec text-analyzer \
 Or via the playground API:
 
 ```bash
-curl -s -X POST http://localhost:5200/api/agents/text-analyzer/run \
+curl -s -X POST http://localhost:15200/api/agents/text-analyzer/run \
   -H 'Content-Type: application/json' \
   -d '{"input": "The new feature shipped on time..."}' | jq .
 ```
@@ -234,7 +239,7 @@ Friday adds the `user:` prefix automatically — you specify `text-analyzer`, Fr
 For CI/CD pipelines or automation, register agents via the daemon API:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/agents/register \
+curl -s -X POST http://localhost:18080/api/agents/register \
   -H 'Content-Type: application/json' \
   -d '{"entrypoint": "/path/to/agents/text-analyzer/agent.py"}'
 ```
@@ -268,7 +273,8 @@ atlas agent register ./my-agent
 atlas agent exec my-agent -i "test input"
 ```
 
-The daemon listens on port `8080` locally. See the Friday CLI documentation for setup.
+In source mode the daemon listens on `:8080` and Friday Studio on `:5200` (instead
+of `:18080` / `:15200` in installer mode). See the Friday CLI documentation for setup.
 
 ### Troubleshooting
 

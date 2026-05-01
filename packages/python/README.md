@@ -14,6 +14,17 @@ Write AI agents in Python that run inside the Friday platform. Agents call LLMs,
 - An LLM provider API key (Anthropic, OpenAI, or Google) configured in the
   daemon's `.env` — see Friday Studio's `.env.example` for the full list.
 
+> **Daemon ports.** Friday exposes two HTTP services: the **daemon API** and **Friday Studio**.
+> The defaults depend on how you ran Friday:
+>
+> | Mode                | Daemon API | Friday Studio |
+> | ------------------- | ---------- | ------------- |
+> | Running from source | `:8080`    | `:5200`       |
+> | Installer / Docker  | `:18080`   | `:15200`      |
+>
+> Examples in this README use the **source-code** ports. If you installed Friday via
+> the installer or Docker, replace `8080` → `18080` and `5200` → `15200`.
+
 ## Quickstart
 
 Install the SDK from PyPI:
