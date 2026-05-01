@@ -21,6 +21,7 @@ Task-focused recipes for common patterns:
 | [Use MCP tools](how-to/use-mcp-tools.md)                     | Invoke Model Context Protocol servers                        |
 | [Handle structured input](how-to/handle-structured-input.md) | Extract JSON from Friday's enriched prompts                  |
 | [Stream progress](how-to/stream-progress.md)                 | Emit real-time updates to the UI                             |
+| [Unit-test agents](how-to/unit-test-agents.md)               | Test agent handlers with `make_test_context()` and fakes     |
 
 ## Reference
 

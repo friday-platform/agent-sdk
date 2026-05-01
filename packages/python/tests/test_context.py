@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 from friday_agent_sdk._context import build_context
-from friday_agent_sdk._types import AgentContext, SessionData
+from friday_agent_sdk._types import AgentContext, Llm, SessionData
 
 
 def _build(raw: dict) -> AgentContext:
@@ -85,4 +85,7 @@ class TestBuildContext:
         """llm_config key in raw dict is stored for LLM builder."""
         raw = {"llm_config": {"model": "anthropic:claude-haiku-4-5"}}
         ctx = _build(raw)
+        # ctx.llm is typed as LlmProtocol; narrow to the concrete Llm to
+        # reach the internal _config attribute.
+        assert isinstance(ctx.llm, Llm)
         assert ctx.llm._config == {"model": "anthropic:claude-haiku-4-5"}

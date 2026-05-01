@@ -87,12 +87,19 @@ jobs:
               agent, run, ok, err,
               AgentContext, AgentResult, AgentExtras,
               ArtifactRef, OutlineRef, OkResult, ErrResult,
-              Http, HttpError, HttpResponse,
-              Llm, LlmError, LlmResponse,
-              SessionData, SkillDefinition, StreamEmitter,
-              ToolCallError, ToolDefinition, Tools,
+              Http, HttpError, HttpProtocol, HttpResponse,
+              Llm, LlmError, LlmProtocol, LlmResponse,
+              SessionData, SkillDefinition, StreamEmitter, StreamProtocol,
+              ToolCallError, ToolDefinition, Tools, ToolsProtocol,
+              make_test_context,
               parse_input, parse_operation,
           )
+          from friday_agent_sdk.testing import FakeLlm, FakeHttp, FakeTools, FakeStream
           assert __version__, "friday_agent_sdk.__version__ should be set"
+          ctx = make_test_context()
+          assert isinstance(ctx.llm, LlmProtocol)
+          assert isinstance(ctx.http, HttpProtocol)
+          assert isinstance(ctx.tools, ToolsProtocol)
+          assert isinstance(ctx.stream, StreamProtocol)
           print(f"OK: friday-agent-sdk {__version__} installs and imports cleanly")
           PY
