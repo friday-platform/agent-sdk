@@ -97,7 +97,7 @@ def _text_to_adf(text: str) -> dict:
     """
     content = []
     parts = re.split(
-        r"\[([^\]]+)\]\(((?:[^()]+|\([^()]*\))*)\)",
+        r"\[([^\]]+)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)",
         text,
     )
     for i, part in enumerate(parts):
