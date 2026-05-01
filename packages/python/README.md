@@ -1,6 +1,18 @@
 # Friday Agent SDK for Python
 
-Write AI agents in Python that run inside the Friday platform. Agents call LLMs, make HTTP requests, and use MCP tools through the host — no API keys or dependencies required in agent code.
+[![PyPI version](https://img.shields.io/pypi/v/friday-agent-sdk.svg)](https://pypi.org/project/friday-agent-sdk/)
+[![Python versions](https://img.shields.io/pypi/pyversions/friday-agent-sdk.svg)](https://pypi.org/project/friday-agent-sdk/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
+
+> **Status: alpha — APIs may change.** Pin an exact version in production.
+
+Write AI agents in Python that run inside the Friday platform. The host manages
+credentials and routes LLM, HTTP, and MCP calls on the agent's behalf, so your
+agent code stays a pure Python function — no provider SDKs, no key plumbing in
+your code.
+
+The SDK on its own is not runnable: agents need the Friday daemon to host them
+and an LLM provider key configured on the daemon. See **Prerequisites** below.
 
 ## Prerequisites
 
