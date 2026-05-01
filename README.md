@@ -1,8 +1,8 @@
 # Friday Agent SDK
 
 [![CI](https://github.com/friday-platform/agent-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/friday-platform/agent-sdk/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/friday-agent-sdk.svg)](https://pypi.org/project/friday-agent-sdk/)
-[![Python versions](https://img.shields.io/pypi/pyversions/friday-agent-sdk.svg)](https://pypi.org/project/friday-agent-sdk/)
+[![PyPI version](https://img.shields.io/pypi/v/friday-agent-sdk.svg?v=1)](https://pypi.org/project/friday-agent-sdk/)
+[![Python versions](https://img.shields.io/pypi/pyversions/friday-agent-sdk.svg?v=1)](https://pypi.org/project/friday-agent-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Status: alpha — APIs may change.** Pin an exact version in production and
