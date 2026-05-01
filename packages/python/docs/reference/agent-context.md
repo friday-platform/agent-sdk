@@ -11,11 +11,21 @@ class AgentContext:
     config: dict = field(default_factory=dict)
     session: SessionData | None = None
     output_schema: dict | None = None
-    tools: Tools = field(default_factory=_uninitialized_tools)
-    llm: Llm = field(default_factory=_uninitialized_llm)
-    http: Http = field(default_factory=_uninitialized_http)
-    stream: StreamEmitter = field(default_factory=_uninitialized_stream)
+    tools: ToolsProtocol = field(default_factory=_uninitialized_tools)
+    llm: LlmProtocol = field(default_factory=_uninitialized_llm)
+    http: HttpProtocol = field(default_factory=_uninitialized_http)
+    stream: StreamProtocol = field(default_factory=_uninitialized_stream)
 ```
+
+The capability fields are typed as **structural protocols** so test doubles
+or custom gateways can be substituted without subclassing. The default
+factories return the production NATS-backed `Tools` / `Llm` / `Http` /
+`StreamEmitter` classes, which all satisfy the protocols natively.
+
+For unit tests, use
+[`make_test_context()`](../how-to/unit-test-agents.md) — it wires up
+`FakeTools`, `FakeLlm`, `FakeHttp`, and `FakeStream` so handlers can run
+without a Friday daemon.
 
 ## Fields
 
