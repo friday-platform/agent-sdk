@@ -95,14 +95,10 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
                 required = {
                     f.name
                     for f in dataclasses.fields(schema)
-                    if f.default is dataclasses.MISSING
-                    and f.default_factory is dataclasses.MISSING
+                    if f.default is dataclasses.MISSING and f.default_factory is dataclasses.MISSING
                 }
                 missing = required - set(filtered.keys())
-                raise ValueError(
-                    f"JSON parsed but doesn't match "
-                    f"{schema.__name__}: missing {missing}"
-                ) from e
+                raise ValueError(f"JSON parsed but doesn't match {schema.__name__}: missing {missing}") from e
         return parsed
 
     # 1. Balanced-brace JSON objects
@@ -131,10 +127,7 @@ def parse_input(prompt: str, schema: type | None = None) -> Any:
     except json.JSONDecodeError:
         pass
 
-    raise ValueError(
-        "No valid JSON object found in prompt. "
-        f"Prompt starts with: {prompt[:200]}"
-    )
+    raise ValueError(f"No valid JSON object found in prompt. Prompt starts with: {prompt[:200]}")
 
 
 def parse_operation(prompt: str, schemas: dict[str, type[T]]) -> T:

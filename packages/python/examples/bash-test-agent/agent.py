@@ -49,13 +49,7 @@ def execute(prompt, ctx):
         repo_url = cmd["repo_url"]
         result = ctx.tools.call(
             "bash",
-            {
-                "command": (
-                    f"git clone --depth 1 {repo_url}"
-                    " /tmp/qa-bash-clone-test"
-                    " && ls /tmp/qa-bash-clone-test"
-                )
-            },
+            {"command": (f"git clone --depth 1 {repo_url} /tmp/qa-bash-clone-test && ls /tmp/qa-bash-clone-test")},
         )
         ctx.tools.call("bash", {"command": "rm -rf /tmp/qa-bash-clone-test"})
         return ok({"bash_result": result})

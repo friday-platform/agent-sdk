@@ -33,10 +33,7 @@ def register_agent(registration: AgentRegistration) -> None:
     """Register an agent. Raises if one is already registered."""
     global _registered_agent
     if _registered_agent is not None:
-        raise RuntimeError(
-            f"Agent already registered: {_registered_agent.id}. "
-            "Only one @agent per module is supported."
-        )
+        raise RuntimeError(f"Agent already registered: {_registered_agent.id}. Only one @agent per module is supported.")
     _registered_agent = registration
 
 

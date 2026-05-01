@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from friday_agent_sdk import agent, err, ok, parse_operation, run
+from friday_agent_sdk import ErrResult, OkResult, agent, err, ok, parse_operation, run
 
 
 @dataclass
@@ -130,10 +130,7 @@ def _parse_pr_url(pr_url: str) -> dict:
 
     segments = [s for s in parsed.path.split("/") if s]
     if len(segments) < 4 or segments[2] != "pull-requests":
-        raise ValueError(
-            f"Invalid PR URL path: {parsed.path}. "
-            "Expected: /workspace/repo_slug/pull-requests/123"
-        )
+        raise ValueError(f"Invalid PR URL path: {parsed.path}. Expected: /workspace/repo_slug/pull-requests/123")
 
     return {
         "workspace": segments[0],
@@ -226,9 +223,7 @@ def _pr_view(config: PrViewConfig, ctx) -> OkResult | ErrResult:
                 "author_uuid": data.get("author", {}).get("uuid"),
                 "state": data.get("state"),
                 "source_branch": data.get("source", {}).get("branch", {}).get("name"),
-                "destination_branch": (
-                    data.get("destination", {}).get("branch", {}).get("name")
-                ),
+                "destination_branch": (data.get("destination", {}).get("branch", {}).get("name")),
                 "head_sha": data.get("source", {}).get("commit", {}).get("hash"),
                 "created_on": data.get("created_on"),
                 "updated_on": data.get("updated_on"),
@@ -279,10 +274,7 @@ def _pr_files(config: PrFilesConfig, ctx) -> OkResult | ErrResult:
     url = f"https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pr_id}/diffstat"
     entries = _paginate_all(url, ctx)
 
-    files = [
-        entry.get("new", {}).get("path") or entry.get("old", {}).get("path", "")
-        for entry in entries
-    ]
+    files = [entry.get("new", {}).get("path") or entry.get("old", {}).get("path", "") for entry in entries]
     return ok(
         {
             "operation": "pr-files",
@@ -341,9 +333,7 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
             "data": {
                 "threads": threads,
                 "total_threads": len(threads),
-                "threads_with_replies": sum(
-                    1 for t in threads if len(t["replies"]) > 0
-                ),
+                "threads_with_replies": sum(1 for t in threads if len(t["replies"]) > 0),
             },
         }
     )
@@ -403,9 +393,7 @@ def _build_comment_body(finding: dict) -> str:
     return "\n".join(parts)
 
 
-def _build_failed_findings_summary(
-    failed: list[dict], findings: list[dict]
-) -> list[str]:
+def _build_failed_findings_summary(failed: list[dict], findings: list[dict]) -> list[str]:
     """Build summary sections for findings that failed to post inline.
 
     Matches the TS buildFailedFindingsSummary() format exactly.
@@ -417,11 +405,7 @@ def _build_failed_findings_summary(
             None,
         )
         if finding:
-            suggestion_block = (
-                f"\n**Suggestion:**\n```\n{finding['suggestion']}\n```"
-                if finding.get("suggestion")
-                else ""
-            )
+            suggestion_block = f"\n**Suggestion:**\n```\n{finding['suggestion']}\n```" if finding.get("suggestion") else ""
             parts.extend(
                 [
                     "",
@@ -479,9 +463,7 @@ def _post_inline_comments(
     return posted, failed
 
 
-def _post_general_comment(
-    body: str, workspace: str, repo_slug: str, pr_id: int, ctx
-) -> None:
+def _post_general_comment(body: str, workspace: str, repo_slug: str, pr_id: int, ctx) -> None:
     """Post a general (non-inline) comment on a PR."""
     url = f"https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pr_id}/comments"
     headers = {
@@ -501,9 +483,7 @@ def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult
     repo_slug = parts["repo_slug"]
     pr_id = parts["pr_id"]
 
-    posted, failed = _post_inline_comments(
-        config.findings, workspace, repo_slug, pr_id, ctx
-    )
+    posted, failed = _post_inline_comments(config.findings, workspace, repo_slug, pr_id, ctx)
 
     total = len(config.findings)
     summary_parts = [
@@ -517,8 +497,7 @@ def _pr_inline_review(config: PrInlineReviewConfig, ctx) -> OkResult | ErrResult
         "",
         "---",
         "",
-        f"> {total} findings: {len(posted)} inline"
-        + (f", {len(failed)} in summary (outside diff range)" if failed else ""),
+        f"> {total} findings: {len(posted)} inline" + (f", {len(failed)} in summary (outside diff range)" if failed else ""),
         *_build_failed_findings_summary(failed, config.findings),
         "",
         "---",
@@ -572,9 +551,7 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
         # Silently skip failed replies (thread may be outdated/deleted)
 
     # Post new inline findings
-    posted, failed = _post_inline_comments(
-        config.new_findings, workspace, repo_slug, pr_id, ctx
-    )
+    posted, failed = _post_inline_comments(config.new_findings, workspace, repo_slug, pr_id, ctx)
 
     # Post summary comment
     summary_parts = [
@@ -745,9 +722,7 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
     try:
         _bash(
             ctx,
-            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
-            f"{askpass_script}ASKPASS_EOF\n"
-            f"chmod 700 {askpass_path}",
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}",
         )
 
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
@@ -780,10 +755,7 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
     # Fetch changed files via diffstat API
     diffstat_url = f"https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pr_id}/diffstat"
     entries = _paginate_all(diffstat_url, ctx)
-    changed_files = [
-        entry.get("new", {}).get("path") or entry.get("old", {}).get("path", "")
-        for entry in entries
-    ]
+    changed_files = [entry.get("new", {}).get("path") or entry.get("old", {}).get("path", "") for entry in entries]
 
     return ok(
         {
@@ -825,9 +797,7 @@ def _repo_clone(config: RepoCloneConfig, ctx) -> OkResult | ErrResult:
         # ASKPASS_EOF prevents shell expansion of heredoc content
         _bash(
             ctx,
-            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
-            f"{askpass_script}ASKPASS_EOF\n"
-            f"chmod 700 {askpass_path}",
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}",
         )
 
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
@@ -882,17 +852,13 @@ def _repo_push(config: RepoPushConfig, ctx) -> OkResult | ErrResult:
         # ASKPASS_EOF prevents shell expansion of heredoc content
         _bash(
             ctx,
-            f"cat > {askpass_path} << 'ASKPASS_EOF'\n"
-            f"{askpass_script}ASKPASS_EOF\n"
-            f"chmod 700 {askpass_path}",
+            f"cat > {askpass_path} << 'ASKPASS_EOF'\n{askpass_script}ASKPASS_EOF\nchmod 700 {askpass_path}",
         )
 
         git_env = {**cred_env, "GIT_ASKPASS": askpass_path}
         _bash(
             ctx,
-            f"cd {config.path} && "
-            f"git -c credential.helper= "
-            f"push -u origin {config.branch}",
+            f"cd {config.path} && git -c credential.helper= push -u origin {config.branch}",
             env=git_env,
         )
 

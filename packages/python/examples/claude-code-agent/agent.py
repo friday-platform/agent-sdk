@@ -8,7 +8,7 @@ with the host managing subprocess lifecycle and sandbox.
 import json
 import re
 
-from friday_agent_sdk import AgentExtras, ArtifactRef, OkResult, agent, err, ok, run
+from friday_agent_sdk import AgentExtras, ArtifactRef, agent, err, ok, run
 
 # ---------------------------------------------------------------------------
 # Pre-processing
@@ -37,15 +37,11 @@ _EXTRACTION_SCHEMA = {
     "properties": {
         "repo": {
             "type": ["string", "null"],
-            "description": (
-                "Repository in owner/repo format, or null if no clone instruction"
-            ),
+            "description": ("Repository in owner/repo format, or null if no clone instruction"),
         },
         "task": {
             "type": "string",
-            "description": (
-                "Task with clone instruction removed, or original prompt verbatim"
-            ),
+            "description": ("Task with clone instruction removed, or original prompt verbatim"),
         },
         "effort": {
             "type": "string",
@@ -133,10 +129,7 @@ def _create_artifact(ctx, prompt: str, data: str) -> ArtifactRef | None:
                         "data": data,
                     },
                     "title": "Claude Code Output",
-                    "summary": (
-                        f"Claude Code: {prompt[:100]}"
-                        f"{'...' if len(prompt) > 100 else ''}"
-                    ),
+                    "summary": (f"Claude Code: {prompt[:100]}{'...' if len(prompt) > 100 else ''}"),
                 }
             ),
         )

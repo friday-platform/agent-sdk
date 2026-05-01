@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import dataclass
 
-from friday_agent_sdk import agent, err, ok, parse_operation, run
+from friday_agent_sdk import ErrResult, OkResult, agent, err, ok, parse_operation, run
 
 
 @dataclass
@@ -172,16 +172,8 @@ def _issue_view(config: IssueViewConfig, ctx) -> OkResult | ErrResult:
                 "priority": fields.get("priority", {}).get("name"),
                 "issue_type": fields.get("issuetype", {}).get("name"),
                 "labels": fields.get("labels", []),
-                "assignee": (
-                    fields.get("assignee", {}).get("displayName")
-                    if fields.get("assignee")
-                    else None
-                ),
-                "reporter": (
-                    fields.get("reporter", {}).get("displayName")
-                    if fields.get("reporter")
-                    else None
-                ),
+                "assignee": (fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None),
+                "reporter": (fields.get("reporter", {}).get("displayName") if fields.get("reporter") else None),
                 "created": fields.get("created"),
                 "updated": fields.get("updated"),
             },
@@ -304,9 +296,7 @@ def _issue_transition(
     if matched is None:
         available = [t.get("name", "") for t in transitions]
         return err(
-            f"No transition matching '{config.transition_name}'"
-            f" for {config.issue_key}. "
-            f"Available: {', '.join(available)}"
+            f"No transition matching '{config.transition_name}' for {config.issue_key}. Available: {', '.join(available)}"
         )
 
     # 2. Execute transition

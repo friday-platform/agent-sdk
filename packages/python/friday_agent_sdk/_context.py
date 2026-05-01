@@ -7,15 +7,12 @@ from friday_agent_sdk._types import (
     AgentContext,
     Http,
     HttpError,
-    HttpResponse,
     Llm,
     LlmError,
-    LlmResponse,
     SessionData,
     SkillDefinition,
     StreamEmitter,
     ToolCallError,
-    ToolDefinition,
     Tools,
 )
 
@@ -82,11 +79,15 @@ def build_context(
         if "error" in data:
             return []
         return [
-            type("ToolEntry", (), {
-                "name": t["name"],
-                "description": t.get("description", ""),
-                "input_schema": json.dumps(t.get("inputSchema", {})),
-            })()
+            type(
+                "ToolEntry",
+                (),
+                {
+                    "name": t["name"],
+                    "description": t.get("description", ""),
+                    "input_schema": json.dumps(t.get("inputSchema", {})),
+                },
+            )()
             for t in data.get("tools", [])
         ]
 

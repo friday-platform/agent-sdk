@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from friday_agent_sdk import agent, err, ok, parse_input, run
+from friday_agent_sdk import ErrResult, OkResult, agent, err, ok, parse_input, run
 
 
 @dataclass
@@ -96,9 +96,7 @@ def _parse_pr_url(pr_url: str) -> dict:
 
     segments = [s for s in parsed.path.split("/") if s]
     if len(segments) < 4 or segments[2] != "pull":
-        raise ValueError(
-            f"Invalid PR URL path: {parsed.path}. Expected: /owner/repo/pull/123"
-        )
+        raise ValueError(f"Invalid PR URL path: {parsed.path}. Expected: /owner/repo/pull/123")
 
     return {
         "owner": segments[0],
@@ -153,11 +151,7 @@ def _clone(config: CloneConfig, ctx) -> OkResult | ErrResult:
                 "GIT_PASSWORD": gh_token,
                 "GIT_CONFIG_COUNT": "1",
                 "GIT_CONFIG_KEY_0": "credential.helper",
-                "GIT_CONFIG_VALUE_0": (
-                    "!f() { echo username=x-access-token; "
-                    f"echo password={gh_token}; "
-                    "};f"
-                ),
+                "GIT_CONFIG_VALUE_0": (f"!f() {{ echo username=x-access-token; echo password={gh_token}; }};f"),
             },
         },
     )
@@ -399,9 +393,7 @@ def _pr_read_threads(config: PrReadThreadsConfig, ctx) -> OkResult | ErrResult:
             "data": {
                 "threads": threads,
                 "total_threads": len(threads),
-                "threads_with_replies": sum(
-                    1 for t in threads if len(t["replies"]) > 0
-                ),
+                "threads_with_replies": sum(1 for t in threads if len(t["replies"]) > 0),
             },
         }
     )
@@ -456,11 +448,7 @@ def _build_failed_findings_summary(
             None,
         )
         if finding:
-            suggestion_block = (
-                f"\n**Suggestion:**\n```\n{finding['suggestion']}\n```"
-                if finding.get("suggestion")
-                else ""
-            )
+            suggestion_block = f"\n**Suggestion:**\n```\n{finding['suggestion']}\n```" if finding.get("suggestion") else ""
             parts.extend(
                 [
                     "",
@@ -679,9 +667,7 @@ def _pr_post_followup(config: PrPostFollowupConfig, ctx) -> OkResult | ErrResult
                 headers=_gh_headers(ctx),
             )
             if meta_resp.status >= 400:
-                return err(
-                    f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}"
-                )
+                return err(f"GitHub API error {meta_resp.status}: {meta_resp.body[:500]}")
             pr_data = json.loads(meta_resp.body)
             commit_id = pr_data["head"]["sha"]
 

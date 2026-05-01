@@ -245,31 +245,42 @@ class SessionData:
 
 def _uninitialized_llm():
     """Factory for uninitialized LLM stub."""
+
     def stub(_: str) -> str:
         raise RuntimeError("LLM capability not initialized - this should only happen in tests without proper context setup")
+
     return Llm(stub)
 
 
 def _uninitialized_tools():
     """Factory for uninitialized Tools stub."""
+
     def call_stub(_: str, __: str) -> Any:
-        raise RuntimeError("Tools capability not initialized - this should only happen in tests without proper context setup")
+        raise RuntimeError(
+            "Tools capability not initialized - this should only happen in tests without proper context setup"
+        )
+
     def list_stub() -> list:
         return []
+
     return Tools(call_stub, list_stub)
 
 
 def _uninitialized_http():
     """Factory for uninitialized Http stub."""
+
     def stub(_: str) -> str:
         raise RuntimeError("HTTP capability not initialized - this should only happen in tests without proper context setup")
+
     return Http(stub)
 
 
 def _uninitialized_stream():
     """Factory for uninitialized StreamEmitter stub (no-op)."""
+
     def stub(_: str, __: str) -> None:
         pass
+
     return StreamEmitter(stub)
 
 

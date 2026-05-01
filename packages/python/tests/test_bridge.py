@@ -103,9 +103,7 @@ class TestSerializeExtras:
         refs = [ArtifactRef(id="art-1", type="document", summary="A doc")]
         extras = AgentExtras(artifact_refs=refs)
         result = _serialize_extras(extras)
-        assert result["artifactRefs"] == [
-            {"id": "art-1", "type": "document", "summary": "A doc"}
-        ]
+        assert result["artifactRefs"] == [{"id": "art-1", "type": "document", "summary": "A doc"}]
 
     def test_outline_refs(self):
         refs = [
@@ -217,8 +215,9 @@ class TestSerializeResult:
 class TestGetMetadata:
     def _run_validate(self):
         mock_nc = _mock_nats(_mock_msg("", {}))
-        with patch("friday_agent_sdk._bridge.NATS", return_value=mock_nc), patch.dict(
-            os.environ, {"FRIDAY_VALIDATE_ID": "val-123", "NATS_URL": "nats://test"}
+        with (
+            patch("friday_agent_sdk._bridge.NATS", return_value=mock_nc),
+            patch.dict(os.environ, {"FRIDAY_VALIDATE_ID": "val-123", "NATS_URL": "nats://test"}),
         ):
             asyncio.run(_validate_async("val-123"))
         return mock_nc
@@ -305,9 +304,12 @@ class TestGetMetadata:
 class TestExecute:
     def _run_execute(self, msg, session_id="sess-1"):
         nc = _mock_nats(msg)
-        with patch("friday_agent_sdk._bridge.NATS", return_value=nc), patch.dict(
-            os.environ,
-            {"FRIDAY_SESSION_ID": session_id, "NATS_URL": "nats://test"},
+        with (
+            patch("friday_agent_sdk._bridge.NATS", return_value=nc),
+            patch.dict(
+                os.environ,
+                {"FRIDAY_SESSION_ID": session_id, "NATS_URL": "nats://test"},
+            ),
         ):
             asyncio.run(_run_async())
         return nc, msg

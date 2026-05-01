@@ -21,14 +21,14 @@ participating, you agree to uphold it.
 
 ### Prerequisites
 
-| Tool | Version | Why |
-| --- | --- | --- |
-| [Node.js](https://nodejs.org/) | `24+` (Active LTS) | Runs Vite+ tooling |
-| [pnpm](https://pnpm.io/) | `10+` | JS/TS package manager (managed via `packageManager` field) |
-| [Python](https://www.python.org/) | `3.12+` | Required by `friday_agent_sdk` |
-| [uv](https://docs.astral.sh/uv/) | latest | Python package manager |
-| [Vite+ (`vp`)](https://vite.plus/) | latest | Unified JS/TS toolchain |
-| [Friday Studio](https://github.com/friday-platform/friday-studio) | latest | Provides the daemon and `atlas` CLI for running agents end-to-end |
+| Tool                                                              | Version            | Why                                                               |
+| ----------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------- |
+| [Node.js](https://nodejs.org/)                                    | `24+` (Active LTS) | Runs Vite+ tooling                                                |
+| [pnpm](https://pnpm.io/)                                          | `10+`              | JS/TS package manager (managed via `packageManager` field)        |
+| [Python](https://www.python.org/)                                 | `3.12+`            | Required by `friday_agent_sdk`                                    |
+| [uv](https://docs.astral.sh/uv/)                                  | latest             | Python package manager                                            |
+| [Vite+ (`vp`)](https://vite.plus/)                                | latest             | Unified JS/TS toolchain                                           |
+| [Friday Studio](https://github.com/friday-platform/friday-studio) | latest             | Provides the daemon and `atlas` CLI for running agents end-to-end |
 
 ### Clone and install
 
