@@ -7,7 +7,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
 authors = [{ name = "Tempest Labs, Inc.", email = "security@hellofriday.ai" }]
-keywords = ["friday", "agent", "agent-sdk", "ai", "llm", "mcp", "anthropic", "openai", "nats"]
+keywords = ["friday", "agent", "agent-sdk", "ai", "ai-agents", "llm", "mcp"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
