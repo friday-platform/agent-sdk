@@ -7,6 +7,8 @@ dependencies required in agent code.
 
 - **SDK reference & guides:** [`packages/python/README.md`](packages/python/README.md)
   and [`packages/python/docs/`](packages/python/docs/)
+- **Examples:** [`packages/python/examples/`](packages/python/examples/) — 10
+  runnable agents from minimal to production-grade
 - **Friday platform docs:** https://docs.hellofriday.ai/
 - **Daemon & `atlas` CLI:** [friday-platform/friday-studio](https://github.com/friday-platform/friday-studio)
 

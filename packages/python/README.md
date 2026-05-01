@@ -114,17 +114,21 @@ uv sync --all-extras --dev
 
 ## Examples
 
-See the [`examples/`](examples/) directory for complete agents ranging from minimal to production-grade:
+See [`examples/`](examples/) for complete agents ranging from minimal to production-grade.
+[`examples/README.md`](examples/README.md) has the full annotated index, including required env vars.
 
-| Example             | Demonstrates                                         |
-| ------------------- | ---------------------------------------------------- |
-| `echo-agent`        | Minimal agent — just returns input                   |
-| `llm-http-agent`    | `ctx.llm.generate()` and `ctx.http.fetch()`          |
-| `tools-agent`       | `ctx.tools.list()` and `ctx.tools.call()`            |
-| `time-agent`        | MCP server configuration and tool usage              |
-| `jira-agent`        | Structured input parsing with `parse_operation()`    |
-| `bb-agent`          | Bitbucket PR operations — production HTTP patterns   |
-| `claude-code-agent` | Full coding agent with fallbacks and model selection |
+| Example                                            | Demonstrates                                                           |
+| -------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`echo-agent`](examples/echo-agent/)               | The minimum viable agent — start here                                  |
+| [`context-inspector`](examples/context-inspector/) | Inspect every `AgentContext` field as JSON — useful for E2E debugging  |
+| [`llm-http-agent`](examples/llm-http-agent/)       | `ctx.llm.generate()` and `ctx.http.fetch()` happy and error paths      |
+| [`tools-agent`](examples/tools-agent/)             | `ctx.tools.list()`, `ctx.tools.call()`, and `ctx.stream.progress()`    |
+| [`time-agent`](examples/time-agent/)               | Declare an MCP server via the `mcp=` decorator and call a tool from it |
+| [`bash-test-agent`](examples/bash-test-agent/)     | Bash tool capabilities — stdout/stderr/exit/cwd/env/multi-command      |
+| [`jira-agent`](examples/jira-agent/)               | `parse_operation()` dispatch across Jira REST API v3 operations        |
+| [`gh-agent`](examples/gh-agent/)                   | GitHub PR operations — clone, view, diff, review, follow-ups           |
+| [`bb-agent`](examples/bb-agent/)                   | Bitbucket equivalent of `gh-agent` — production HTTP patterns          |
+| [`claude-code-agent`](examples/claude-code-agent/) | Full multi-phase agent: structured extraction, fallbacks, artifacts    |
 
 ## Testing
 
