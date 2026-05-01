@@ -307,34 +307,38 @@ installed packages are fine.
 
 ## Getting Agents Into Friday
 
-### CLI (recommended)
+### Register via the daemon HTTP API
 
-Register your agent from its directory:
-
-```bash
-atlas agent register ./my-agent
-```
-
-Your agent directory should contain at minimum an `agent.py` file. If the entry
-point has a different name, specify it:
+Register your agent by POSTing the entrypoint's absolute path to the daemon:
 
 ```bash
-atlas agent register ./my-agent --entry main.py
+curl -X POST http://localhost:8080/api/agents/register \
+  -H 'Content-Type: application/json' \
+  -d '{"entrypoint": "/abs/path/to/your-agent/agent.py"}'
 ```
 
-The daemon spawns the entry point with `FRIDAY_VALIDATE_ID`, collects metadata
-over NATS, copies the source directory to `~/.friday/local/agents/{id}@{version}/`,
-and reloads the registry.
+`entrypoint` must be an absolute path. The daemon spawns it with
+`FRIDAY_VALIDATE_ID`, collects metadata over NATS, copies the source directory
+to `~/.friday/local/agents/{id}@{version}/`, and reloads the registry. No
+compilation step — the agent process is spawned per invocation and
+communicates with the host via NATS request/reply.
+
+The Friday daemon listens on `localhost:8080` by default (configurable via
+the `FRIDAY_PORT` env var or the `--port` flag if you started the daemon
+manually).
 
 ### Test directly
 
-Execute an agent without going through the full FSM pipeline:
+Execute an agent without going through the full FSM pipeline. Replace
+`my-agent` with your agent id (the `id=` value from the `@agent` decorator):
 
 ```bash
-atlas agent exec my-agent -i "test prompt"
+curl -s -X POST "http://localhost:8080/api/agents/my-agent/run?workspaceId=user" \
+  -H 'Content-Type: application/json' \
+  -d '{"input": "test prompt"}'
 ```
 
-Or via the playground API:
+Or via the playground API on `localhost:5200`:
 
 ```bash
 curl -s -X POST http://localhost:5200/api/agents/my-agent/run \
