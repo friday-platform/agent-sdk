@@ -93,7 +93,7 @@ def _text_to_adf(text: str) -> dict:
     """Convert plain text to minimal ADF (Atlassian Document Format).
 
     ADF is Jira's rich text format. Supports [text](url) markdown links.
-    See: https://developer.atlassian.com/cloud/jira/platform/apis/document/jira-document-structure/
+    See: https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/
     """
     content = []
     parts = re.split(
