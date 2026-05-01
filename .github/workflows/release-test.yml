@@ -72,3 +72,8 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: packages/python/dist
           print-hash: true
+          # TestPyPI rejects re-uploads of an existing version; without this
+          # flag a second v0.1.1-test2 dry-run after v0.1.1-test1 fails. The
+          # production release.yml does NOT set this — a real release should
+          # never silently skip.
+          skip-existing: true
