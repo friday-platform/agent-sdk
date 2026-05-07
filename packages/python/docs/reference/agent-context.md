@@ -11,6 +11,7 @@ class AgentContext:
     config: dict = field(default_factory=dict)
     session: SessionData | None = None
     output_schema: dict | None = None
+    input: AgentInput = field(default_factory=_uninitialized_input)
     tools: Tools = field(default_factory=_uninitialized_tools)
     llm: Llm = field(default_factory=_uninitialized_llm)
     http: Http = field(default_factory=_uninitialized_http)
@@ -78,6 +79,25 @@ else:
     result = ctx.llm.generate(...)
 ```
 
+### `input`
+
+- **Type:** `AgentInput`
+- **Description:** Structured action input from the Friday runtime. Use this for FSM `inputFrom` handoffs instead of scraping JSON out of the rendered prompt.
+
+Common methods:
+
+- `ctx.input.get(name)` — read the compact payload for an `inputFrom` document id or config field.
+- `ctx.input.require(name)` — same as `get`, but raises `ValueError` when missing.
+- `ctx.input.artifact_refs(name)` — list artifact refs attached to the selected input.
+- `ctx.input.artifact_json(name)` — call host `artifacts_get` and parse JSON artifact contents for the selected input.
+
+```python
+payload = ctx.input.artifact_json("fetched-emails")
+emails = payload.get("emails", [])
+```
+
+This dereferences data inside the worker action that needs it. Job results, chat supervisor context, and persisted output documents should still stay compact summary/ref shapes.
+
 ### `tools`
 
 - **Type:** `Tools`
@@ -134,6 +154,7 @@ See [ctx.stream](stream-capability.md).
 | `config`        | Yes        | Empty dict if no config provided        |
 | `session`       | No         | May be None outside Friday sessions     |
 | `output_schema` | No         | Only when caller specifies schema       |
+| `input`         | Yes        | Empty structured input when none exists |
 | `tools`         | Yes        | Always initialized (stub in tests)      |
 | `llm`           | Yes        | Always initialized (stub in tests)      |
 | `http`          | Yes        | Always initialized (stub in tests)      |

@@ -1,6 +1,6 @@
 # friday-agent-sdk: Python SDK for authoring Friday agents
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 from friday_agent_sdk._bridge import run
 from friday_agent_sdk._decorator import agent
@@ -17,9 +17,11 @@ from friday_agent_sdk._result import (
 )
 from friday_agent_sdk._types import (
     AgentContext,
+    AgentInput,
     Http,
     HttpError,
     HttpResponse,
+    InputArtifactRef,
     Llm,
     LlmError,
     LlmResponse,
@@ -34,12 +36,14 @@ from friday_agent_sdk._types import (
 __all__ = [
     "AgentContext",
     "AgentExtras",
+    "AgentInput",
     "AgentResult",
     "ArtifactRef",
     "ErrResult",
     "Http",
     "HttpError",
     "HttpResponse",
+    "InputArtifactRef",
     "Llm",
     "LlmError",
     "LlmResponse",
