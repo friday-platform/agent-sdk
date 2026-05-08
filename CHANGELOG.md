@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-05-07
+
+### Changed
+
+- Updated the `writing-friday-python-agents` skill with Friday Studio runtime guidance for host tool usage: do not bypass `ctx.tools`, use `request_human_input` for blocking decisions, rely on injected `FRIDAY_NATS_URL`, and inspect registered agents via daemon APIs instead of hardcoded paths.
+
 ## [0.1.6] - 2026-05-07
 
 ### Added

@@ -1,6 +1,6 @@
 [project]
 name = "friday-agent-sdk"
-version = "0.1.6"
+version = "0.1.7"
 description = "Python SDK for authoring Friday agents — call LLMs, HTTP, and MCP tools without managing keys."
 readme = "README.md"
 license = "MIT"
