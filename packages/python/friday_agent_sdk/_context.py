@@ -7,6 +7,7 @@ from typing import Any
 
 from friday_agent_sdk._types import (
     AgentContext,
+    AgentInput,
     Http,
     HttpError,
     Llm,
@@ -135,13 +136,16 @@ def build_context(
         if isinstance(s, dict)
     ]
 
+    tools = Tools(call_tool=tools_call_sync, list_tools=tools_list_sync)
+
     return AgentContext(
         env=raw.get("env", {}),
         config=raw.get("config", {}),
         skills=skills,
         session=session,
         output_schema=raw.get("output_schema"),
-        tools=Tools(call_tool=tools_call_sync, list_tools=tools_list_sync),
+        input=AgentInput(raw.get("input", {}), tools),
+        tools=tools,
         llm=Llm(llm_generate=llm_generate_sync, agent_llm_config=agent_llm_config),
         http=Http(http_fetch=http_fetch_sync),
         stream=StreamEmitter(stream_emit=stream_emit_sync),

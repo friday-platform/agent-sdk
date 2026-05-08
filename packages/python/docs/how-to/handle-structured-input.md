@@ -1,12 +1,35 @@
 # How to Handle Structured Input
 
-Extract JSON configurations from Friday's enriched prompts using `parse_input()` and `parse_operation()`.
+Use `ctx.input` for runtime-provided action input, especially workspace-job `inputFrom` handoffs. Use `parse_input()` and `parse_operation()` only when you need to extract JSON from the human-readable prompt.
 
 > **New here?** See [Your First Friday Agent](../tutorial/your-first-agent.md#step-3-build-and-test) for how to build and run your agent.
 
-## The problem
+## Action input from workspace jobs
 
-Friday sends your agent an "enriched prompt" — a markdown string containing:
+Friday can pass structured action input separately from the rendered prompt. This is the preferred API for multi-step jobs because upstream outputs may be compacted into summary + artifact refs instead of being inlined.
+
+```python
+from friday_agent_sdk import agent, ok
+
+@agent(id="email-classifier", version="1.0.0", description="Classifies fetched emails")
+def execute(prompt, ctx):
+    fetched = ctx.input.get("fetched-emails")  # compact summary/ref payload
+    refs = ctx.input.artifact_refs("fetched-emails")
+
+    payload = ctx.input.artifact_json("fetched-emails")
+    emails = payload.get("emails", [])
+
+    return ok({
+        "count": len(emails),
+        "artifactIds": [ref.id for ref in refs],
+    })
+```
+
+Use this pattern when a workspace job chains steps with `outputTo` → `inputFrom`. The downstream worker dereferences the artifact only inside its own execution; job results, chat supervisor context, and persisted documents can remain compact.
+
+## Prompt JSON extraction
+
+Friday also sends your agent an "enriched prompt" — a markdown string containing:
 
 - The user's task
 - Temporal facts (current time, relevant history)
@@ -178,11 +201,14 @@ def execute(prompt, ctx):
 
 ## When to use which
 
-| Function                           | Use When                                            |
-| ---------------------------------- | --------------------------------------------------- |
-| `parse_input(prompt)`              | Single configuration, no discriminated types        |
-| `parse_input(prompt, Schema)`      | Single configuration, want typed validation         |
-| `parse_operation(prompt, schemas)` | Multiple operations via `"operation"` discriminator |
+| Function                           | Use When                                                            |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| `ctx.input.get(name)`              | Read a named runtime action input / `inputFrom` payload             |
+| `ctx.input.artifact_refs(name)`    | Inspect artifact refs attached to a compact input payload           |
+| `ctx.input.artifact_json(name)`    | Hydrate JSON artifact contents through host `artifacts_get`         |
+| `parse_input(prompt)`              | Single prompt-embedded JSON configuration, no discriminated types   |
+| `parse_input(prompt, Schema)`      | Single prompt-embedded JSON configuration with typed validation     |
+| `parse_operation(prompt, schemas)` | Multiple prompt-embedded operations via `"operation"` discriminator |
 
 ## Tips
 

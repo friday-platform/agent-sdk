@@ -61,6 +61,7 @@ stubs in test contexts, but never `None`.
 | LLM         | `ctx.llm`     | Generate text or structured objects via host LLM registry |
 | HTTP        | `ctx.http`    | Make outbound HTTP requests (TLS handled by host)         |
 | MCP Tools   | `ctx.tools`   | Call MCP server tools (GitHub, Jira, databases, etc.)     |
+| Input       | `ctx.input`   | Read structured action input / `inputFrom` artifact refs  |
 | Streaming   | `ctx.stream`  | Emit progress/intent events to the UI                     |
 | Environment | `ctx.env`     | Read environment variables (API keys, config)             |
 | Config      | `ctx.config`  | Agent-specific configuration from workspace               |
@@ -202,9 +203,34 @@ Emit progress _before_ expensive operations so the UI shows what's happening.
 
 ## Structured Input Handling
 
+### ctx.input — Runtime-provided action input
+
+For workspace jobs, prefer `ctx.input` over prompt scraping when consuming
+upstream `inputFrom` data. Producers may compact bulky outputs into summary +
+artifact refs; downstream Python agents should dereference those refs through
+host capabilities, not ask the producer to inline large payloads.
+
+```python
+payload = ctx.input.artifact_json("fetched-emails")
+emails = payload.get("emails", [])
+
+return ok({"count": len(emails), "firstId": emails[0]["id"] if emails else None})
+```
+
+Useful methods:
+
+- `ctx.input.get("doc-id")` — compact input payload for an `inputFrom` document.
+- `ctx.input.require("doc-id")` — same, but raises if missing.
+- `ctx.input.artifact_refs("doc-id")` — artifact refs attached to the input.
+- `ctx.input.artifact_json("doc-id")` — fetches via `artifacts_get` and parses JSON contents.
+
+`prompt` still exists for natural-language task instructions and backwards
+compatibility, but `parse_input(prompt)` is not the right abstraction for
+multi-step `outputTo`/`inputFrom` handoffs.
+
 Friday sends "enriched prompts" — markdown with embedded JSON containing task
-details, signal data, and context. Code agents need to extract structured data
-from these.
+details, signal data, and context. Code agents can still extract structured data
+from these for simple one-shot prompts.
 
 ### parse_input — Simple extraction
 

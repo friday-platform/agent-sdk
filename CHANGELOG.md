@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-07
+
+### Added
+
+- Added `ctx.input` structured action-input helpers for Python user agents. Agents can now read compact `inputFrom` payloads, enumerate `artifactRefs`, and hydrate JSON artifacts via host `artifacts_get` without scraping rendered prompts or re-inlining bulky upstream data.
+
 ## [0.1.5] - 2026-05-01
 
 ### Changed

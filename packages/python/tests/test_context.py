@@ -16,6 +16,7 @@ class TestBuildContext:
         raw = {
             "env": {"API_KEY": "secret"},
             "config": {"temperature": 0.7},
+            "input": {"config": {"upstream": {"summary": "ready"}}},
             "session": {
                 "id": "sess-1",
                 "workspace_id": "ws-1",
@@ -28,6 +29,7 @@ class TestBuildContext:
         assert isinstance(ctx, AgentContext)
         assert ctx.env == {"API_KEY": "secret"}
         assert ctx.config == {"temperature": 0.7}
+        assert ctx.input.get("upstream") == {"summary": "ready"}
         assert isinstance(ctx.session, SessionData)
         assert ctx.session.id == "sess-1"
         assert ctx.session.workspace_id == "ws-1"
@@ -37,6 +39,7 @@ class TestBuildContext:
         ctx = _build({})
         assert ctx.env == {}
         assert ctx.config == {}
+        assert ctx.input.get() == {}
         assert ctx.session is None
         assert ctx.output_schema is None
 

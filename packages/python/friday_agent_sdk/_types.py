@@ -65,6 +65,148 @@ class Tools:
         ]
 
 
+@dataclass(frozen=True)
+class InputArtifactRef:
+    """Reference to an artifact supplied through action input."""
+
+    id: str
+    type: str = "Artifact"
+    summary: str = ""
+
+
+_MISSING = object()
+
+
+class AgentInput:
+    """Structured input supplied by the Friday runtime.
+
+    `prompt` remains a human-readable enriched string for backwards
+    compatibility. `ctx.input` is the structured counterpart: it exposes the
+    compact `inputFrom`/config payload without asking agents to scrape JSON out
+    of markdown, and provides helpers for explicit artifact dereferencing.
+    """
+
+    def __init__(self, raw: dict | None = None, tools: Tools | None = None) -> None:
+        self.raw: dict = raw if isinstance(raw, dict) else {}
+        self._tools = tools
+
+    @property
+    def config(self) -> dict:
+        """Input config keyed by `inputFrom` document id and signal fields."""
+        config = self.raw.get("config")
+        return config if isinstance(config, dict) else {}
+
+    def get(self, name: str | None = None, default: Any = None) -> Any:
+        """Return structured input.
+
+        With `name`, lookup prefers `raw["config"][name]` (the usual
+        `inputFrom` shape), then falls back to `raw[name]`. Without `name`, the
+        full raw runtime input is returned.
+        """
+        if name is None:
+            return self.raw
+        if name in self.config:
+            return self.config[name]
+        return self.raw.get(name, default)
+
+    def require(self, name: str | None = None) -> Any:
+        """Like get(), but raise ValueError when the requested input is missing."""
+        if name is None:
+            if not self.raw:
+                raise ValueError("Required action input not found: input")
+            return self.raw
+
+        value = self.get(name, _MISSING)
+        if value is _MISSING:
+            raise ValueError(f"Required action input not found: {name}")
+        return value
+
+    def artifact_refs(self, name: str | None = None) -> list[InputArtifactRef]:
+        """Return artifact refs found in the selected structured input."""
+        target = self.get(name) if name is not None else self.raw
+        refs: list[InputArtifactRef] = []
+        self._collect_artifact_refs(target, refs)
+        return refs
+
+    def artifact_json(self, name: str | None = None) -> Any:
+        """Fetch artifact refs through `artifacts_get` and parse JSON contents.
+
+        Returns the parsed payload for a single ref, or a list of parsed payloads
+        for multiple refs. This intentionally dereferences inside the worker
+        action only; supervisors and persisted output docs can stay compact.
+        """
+        refs = self.artifact_refs(name)
+        if not refs:
+            label = name or "input"
+            raise ValueError(f"No artifact refs found in action input: {label}")
+        if self._tools is None:
+            raise ToolCallError("artifacts_get unavailable: ctx.tools is not initialized")
+
+        payloads = [self._read_artifact_json(ref) for ref in refs]
+        return payloads[0] if len(payloads) == 1 else payloads
+
+    def _read_artifact_json(self, ref: InputArtifactRef) -> Any:
+        if self._tools is None:
+            raise ToolCallError("artifacts_get unavailable: ctx.tools is not initialized")
+        result = self._tools.call("artifacts_get", {"artifactId": ref.id})
+        payload = self._unwrap_tool_payload(result)
+        if isinstance(payload, dict) and "contents" in payload:
+            contents = payload["contents"]
+            if isinstance(contents, str):
+                try:
+                    return json.loads(contents)
+                except json.JSONDecodeError:
+                    return contents
+        return payload
+
+    @staticmethod
+    def _unwrap_tool_payload(result: Any) -> Any:
+        if isinstance(result, dict):
+            if result.get("isError") is True:
+                raise ToolCallError(f"artifacts_get failed: {result}")
+            content = result.get("content")
+            if isinstance(content, list):
+                texts = [item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"]
+                text = "\n".join(part for part in texts if part)
+                if text:
+                    try:
+                        return json.loads(text)
+                    except json.JSONDecodeError:
+                        return text
+        return result
+
+    @classmethod
+    def _collect_artifact_refs(cls, value: Any, out: list[InputArtifactRef]) -> None:
+        if isinstance(value, dict):
+            cls._append_ref(value.get("artifactRef"), out)
+            raw_refs = value.get("artifactRefs")
+            if isinstance(raw_refs, list):
+                for raw_ref in raw_refs:
+                    cls._append_ref(raw_ref, out)
+            for key, child in value.items():
+                if key in {"artifactRef", "artifactRefs", "artifactContent"}:
+                    continue
+                cls._collect_artifact_refs(child, out)
+        elif isinstance(value, list):
+            for item in value:
+                cls._collect_artifact_refs(item, out)
+
+    @staticmethod
+    def _append_ref(raw: Any, out: list[InputArtifactRef]) -> None:
+        if not isinstance(raw, dict):
+            return
+        ref_id = raw.get("id") or raw.get("artifactId") or raw.get("artifact_id")
+        if not isinstance(ref_id, str) or not ref_id:
+            return
+        raw_type = raw.get("type")
+        ref_type = raw_type if isinstance(raw_type, str) else "Artifact"
+        raw_summary = raw.get("summary")
+        summary = raw_summary if isinstance(raw_summary, str) else ""
+        if any(existing.id == ref_id for existing in out):
+            return
+        out.append(InputArtifactRef(id=ref_id, type=ref_type, summary=summary))
+
+
 @dataclass
 class LlmResponse:
     """Response from an LLM generation call."""
@@ -285,6 +427,11 @@ def _uninitialized_stream():
     return StreamEmitter(stub)
 
 
+def _uninitialized_input():
+    """Factory for empty structured input."""
+    return AgentInput({}, _uninitialized_tools())
+
+
 @dataclass
 class SkillDefinition:
     """A workspace skill injected at agent invocation time."""
@@ -307,6 +454,7 @@ class AgentContext:
     skills: list[SkillDefinition] = field(default_factory=list)
     session: SessionData | None = None
     output_schema: dict | None = None
+    input: AgentInput = field(default_factory=_uninitialized_input)
     tools: Tools = field(default_factory=_uninitialized_tools)
     llm: Llm = field(default_factory=_uninitialized_llm)
     http: Http = field(default_factory=_uninitialized_http)

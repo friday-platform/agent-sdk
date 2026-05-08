@@ -85,8 +85,8 @@ jobs:
           from friday_agent_sdk import (
               __version__,
               agent, run, ok, err,
-              AgentContext, AgentResult, AgentExtras,
-              ArtifactRef, OutlineRef, OkResult, ErrResult,
+              AgentContext, AgentInput, AgentResult, AgentExtras,
+              ArtifactRef, InputArtifactRef, OutlineRef, OkResult, ErrResult,
               Http, HttpError, HttpResponse,
               Llm, LlmError, LlmResponse,
               SessionData, SkillDefinition, StreamEmitter,
