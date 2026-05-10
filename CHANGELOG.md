@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-05-09
+
+### Changed
+
+- **Renamed platform tools to verb-first names** to match the wider Friday platform tool-suite convention. Affects every agent surface (chat, FSM `type: llm` actions, `type: atlas`/`type: user` agents calling `ctx.tools.call(...)`):
+  - `memory_save` → `save_memory_entry`
+  - `memory_read` → `list_memory_entries`
+  - `memory_remove` → `delete_memory_entry`
+  - `artifacts_create` → `create_artifact`
+  - `artifacts_get` → `get_artifact`
+  - `workspace_delete` → `delete_workspace`
+- `ctx.input.artifact_json(...)` now hydrates JSON artifact contents through `get_artifact` instead of `artifacts_get`.
+- `writing-friday-python-agents` skill examples updated to use the verb-first names.
+
+### Migration
+
+Existing Python agents that hardcode the old tool names in `ctx.tools.call("memory_save", ...)` (or any of the renamed names) will fail with `ToolCallError("unknown tool: ...")` against Friday Studio releases pinning this SDK. Grep for the old names and replace with the new ones; both surfaces speak only the new names.
+
 ## [0.1.7] - 2026-05-07
 
 ### Changed

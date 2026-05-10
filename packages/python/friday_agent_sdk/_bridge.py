@@ -111,11 +111,14 @@ async def _run_async() -> None:
     loop = asyncio.get_event_loop()
 
     sub = await nc.subscribe(f"agents.{session_id}.execute")
+    await nc.flush()
 
-    # Signal ready after subscribing — daemon waits for this before sending the execute
-    # request. Replaces the 503-retry approach, which breaks when wildcard NATS
-    # subscribers (e.g. debug tools) are present and suppress "no responders".
+    # Signal ready after the execute subscription is registered server-side — daemon
+    # waits for this before sending the execute request. Replaces the 503-retry
+    # approach, which breaks when wildcard NATS subscribers (e.g. debug tools) are
+    # present and suppress "no responders".
     await nc.publish(f"agents.{session_id}.ready", b"")
+    await nc.flush()
 
     # single-shot: handle exactly one message then exit (spawn-per-call)
     msg = await sub.next_msg(timeout=180)

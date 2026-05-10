@@ -39,6 +39,7 @@ def _mock_nats(msg):
     nc.connect = AsyncMock()
     nc.subscribe = AsyncMock(return_value=sub)
     nc.publish = AsyncMock()
+    nc.flush = AsyncMock()
     nc.drain = AsyncMock()
     return nc
 
