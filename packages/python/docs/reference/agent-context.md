@@ -89,7 +89,7 @@ Common methods:
 - `ctx.input.get(name)` — read the compact payload for an `inputFrom` document id or config field.
 - `ctx.input.require(name)` — same as `get`, but raises `ValueError` when missing.
 - `ctx.input.artifact_refs(name)` — list artifact refs attached to the selected input.
-- `ctx.input.artifact_json(name)` — call host `artifacts_get` and parse JSON artifact contents for the selected input.
+- `ctx.input.artifact_json(name)` — call host `get_artifact` and parse JSON artifact contents for the selected input.
 
 ```python
 payload = ctx.input.artifact_json("fetched-emails")

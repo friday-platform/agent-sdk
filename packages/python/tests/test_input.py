@@ -107,7 +107,7 @@ class TestArtifactJson:
             "emails": [{"id": "fake-001"}],
             "count": 1,
         }
-        tools._call_tool.assert_called_once_with("artifacts_get", json.dumps({"artifactId": "art-1"}))
+        tools._call_tool.assert_called_once_with("get_artifact", json.dumps({"artifactId": "art-1"}))
 
     def test_artifact_json_returns_list_for_multiple_refs(self):
         calls = [
@@ -128,7 +128,7 @@ class TestArtifactJson:
     def test_artifact_json_requires_tools(self):
         agent_input = AgentInput({"artifactRefs": [{"id": "art-1"}]})
 
-        with pytest.raises(ToolCallError, match="artifacts_get unavailable"):
+        with pytest.raises(ToolCallError, match="get_artifact unavailable"):
             agent_input.artifact_json()
 
     def test_artifact_json_raises_on_tool_error_result(self):
@@ -138,5 +138,5 @@ class TestArtifactJson:
         )
         agent_input = AgentInput({"artifactRefs": [{"id": "art-1"}]}, tools)
 
-        with pytest.raises(ToolCallError, match="artifacts_get failed"):
+        with pytest.raises(ToolCallError, match="get_artifact failed"):
             agent_input.artifact_json()

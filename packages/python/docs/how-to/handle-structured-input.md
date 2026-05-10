@@ -205,7 +205,7 @@ def execute(prompt, ctx):
 | ---------------------------------- | ------------------------------------------------------------------- |
 | `ctx.input.get(name)`              | Read a named runtime action input / `inputFrom` payload             |
 | `ctx.input.artifact_refs(name)`    | Inspect artifact refs attached to a compact input payload           |
-| `ctx.input.artifact_json(name)`    | Hydrate JSON artifact contents through host `artifacts_get`         |
+| `ctx.input.artifact_json(name)`    | Hydrate JSON artifact contents through host `get_artifact`          |
 | `parse_input(prompt)`              | Single prompt-embedded JSON configuration, no discriminated types   |
 | `parse_input(prompt, Schema)`      | Single prompt-embedded JSON configuration with typed validation     |
 | `parse_operation(prompt, schemas)` | Multiple prompt-embedded operations via `"operation"` discriminator |

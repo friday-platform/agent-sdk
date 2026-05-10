@@ -129,7 +129,7 @@ class AgentInput:
         return refs
 
     def artifact_json(self, name: str | None = None) -> Any:
-        """Fetch artifact refs through `artifacts_get` and parse JSON contents.
+        """Fetch artifact refs through `get_artifact` and parse JSON contents.
 
         Returns the parsed payload for a single ref, or a list of parsed payloads
         for multiple refs. This intentionally dereferences inside the worker
@@ -140,15 +140,15 @@ class AgentInput:
             label = name or "input"
             raise ValueError(f"No artifact refs found in action input: {label}")
         if self._tools is None:
-            raise ToolCallError("artifacts_get unavailable: ctx.tools is not initialized")
+            raise ToolCallError("get_artifact unavailable: ctx.tools is not initialized")
 
         payloads = [self._read_artifact_json(ref) for ref in refs]
         return payloads[0] if len(payloads) == 1 else payloads
 
     def _read_artifact_json(self, ref: InputArtifactRef) -> Any:
         if self._tools is None:
-            raise ToolCallError("artifacts_get unavailable: ctx.tools is not initialized")
-        result = self._tools.call("artifacts_get", {"artifactId": ref.id})
+            raise ToolCallError("get_artifact unavailable: ctx.tools is not initialized")
+        result = self._tools.call("get_artifact", {"artifactId": ref.id})
         payload = self._unwrap_tool_payload(result)
         if isinstance(payload, dict) and "contents" in payload:
             contents = payload["contents"]
@@ -163,7 +163,7 @@ class AgentInput:
     def _unwrap_tool_payload(result: Any) -> Any:
         if isinstance(result, dict):
             if result.get("isError") is True:
-                raise ToolCallError(f"artifacts_get failed: {result}")
+                raise ToolCallError(f"get_artifact failed: {result}")
             content = result.get("content")
             if isinstance(content, list):
                 texts = [item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"]
