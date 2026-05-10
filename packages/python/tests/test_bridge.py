@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 from dataclasses import dataclass
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
@@ -463,3 +463,18 @@ class TestExecute:
         msg = _mock_msg("hi", {})
         self._run_execute(msg)
         assert captured["session"] is None
+
+    def test_readiness_handshake_flushes_subscribe_and_publish(self):
+        # Locks in subscribe→flush→publish→flush ordering — see friday-studio#225.
+        _register(lambda prompt, ctx: ok("done"))
+        msg = _mock_msg("hi", {})
+        nc, _ = self._run_execute(msg)
+
+        nc.assert_has_calls(
+            [
+                call.subscribe("agents.sess-1.execute"),
+                call.flush(),
+                call.publish("agents.sess-1.ready", b""),
+                call.flush(),
+            ]
+        )
