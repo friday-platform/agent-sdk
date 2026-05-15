@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-05-14
+
+### Changed
+
+- Updated the `writing-friday-python-agents` skill to document `ctx.input` (structured action-input helpers), drop stale daemon-teaching, and prune platform-tool prose now covered elsewhere.
+- Clarified in the skill how a Python user agent receives signal payloads.
+
 ## [0.1.8] - 2026-05-09
 
 ### Changed
