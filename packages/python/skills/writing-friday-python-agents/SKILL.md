@@ -138,84 +138,15 @@ Currently only `stdio` transport is supported.
 
 If `ctx.tools.call` raises `ToolCallError("Unknown tool ...")`, list tools and fix the workspace/agent config rather than retrying a guessed name.
 
-### Human input — `request_human_input` (platform tool)
+### Platform-injected tools
 
-When a user agent needs a decision, approval, or disambiguation, call the
-platform tool instead of streaming a question and hoping a later chat turn
-resumes the process:
-
-```python
-choice = ctx.tools.call("request_human_input", {
-    "question": "What should I do with these messages?",
-    "options": [
-        {"label": "Archive", "value": "archive"},
-        {"label": "Keep", "value": "keep"},
-    ],
-})
-# returns JSON text/content with status, answer, and elicitationId
-```
-
-The host creates an Activity/sidebar `open-question` elicitation, blocks this
-same tool call until the user answers/declines/expires, then resumes the agent
-with the answer. Use this for interactive review workflows; do not implement a
-local polling loop or direct `/api/elicitations` HTTP calls.
-
-### Memory — `save_memory_entry` / `list_memory_entries` (platform tools)
-
-The host injects platform memory tools into every agent's tool surface
-automatically — no MCP declaration needed. Most-used:
-
-```python
-# Append a single fact. The store handles persistence + ordering.
-ctx.tools.call("save_memory_entry", {
-    "memoryName": "preferences",
-    "text": "Always archive newsletters from substack.com",
-})
-
-# Read recent entries. (The 20 most recent narrative entries are
-# auto-injected into the LLM-side system prompt every turn — Python
-# agents don't see those, so call list_memory_entries explicitly when you need
-# durable state across runs.)
-result = ctx.tools.call("list_memory_entries", {
-    "memoryName": "preferences",
-    "limit": 50,
-})
-```
-
-**Append semantics — one call per fact, never read-concat-write.**
-
-```python
-# ✅ Correct — one fact per call. Concurrent writers compose cleanly.
-for fact in new_preferences:
-    ctx.tools.call("save_memory_entry", {"memoryName": "preferences", "text": fact})
-
-# ❌ Wrong — read-concat-write. Concurrent writers clobber each other,
-#    fights the platform's append/dedup logic, and the next run starts
-#    from a stale snapshot.
-existing = ctx.tools.call("list_memory_entries", {"memoryName": "preferences"})
-combined = existing["text"] + "\n" + "\n".join(new_preferences)
-ctx.tools.call("save_memory_entry", {"memoryName": "preferences", "text": combined})
-```
-
-**Footgun: `ToolCallError` on validation failure.** `ctx.tools.call`
-raises if the store isn't declared in `workspace.yml`, if the entry
-exceeds size limits, or if the host rejects the write. Never swallow
-with bare `except Exception` — that silently drops writes. Surface
-the error through `err()` or let it propagate.
-
-```python
-from friday_agent_sdk import ToolCallError
-
-try:
-    ctx.tools.call("save_memory_entry", {"memoryName": "preferences", "text": fact})
-except ToolCallError as e:
-    return err(f"save_memory_entry failed: {e}")
-```
-
-**Stores must use the `narrative` strategy.** Friday's runtime today
-only implements narrative storage; stores declared with other strategies
-(`retrieval`, `dedup`, `kv`) exist in the schema but throw at write time.
-If you're authoring a workspace, just use narrative.
+The host may inject additional tools into `ctx.tools` beyond what you declared
+in `mcp={...}` — workflows like human-input elicitations, memory writes,
+artifact handling. These are platform features, not SDK features; their names,
+arg shapes, and semantics belong to whichever platform you're running on. Call
+`ctx.tools.list()` at runtime to see what's actually available, and consult the
+platform's own docs for which tools to call. The SDK contract is just
+`ctx.tools.call(name, args) -> dict` and `ToolCallError` on failure.
 
 ### ctx.stream — Progress Events
 
@@ -232,48 +163,46 @@ Emit progress _before_ expensive operations so the UI shows what's happening.
 A `type: user` agent receives input through one of two channels. Pick by how
 the job is wired, not by preference:
 
-- **Signal payload** — the fields the job's trigger signal was fired with,
-  plus any `{{inputs.<field>}}` the FSM action interpolated. These arrive in
-  the **`prompt`** string. Parse them with `parse_input(prompt)`. `ctx.input`
-  does NOT carry the signal payload — a job triggered by a signal with no
-  upstream producer has an empty `ctx.input`.
-- **Upstream step output** — a prior FSM step's `outputTo` document, wired
-  into this action via `inputFrom`. These arrive in **`ctx.input`**, keyed by
-  the producing document's id. Use `ctx.input.get("doc-id")`.
+| Channel              | Where it arrives | Read with                  | Use for                                          |
+| -------------------- | ---------------- | -------------------------- | ------------------------------------------------ |
+| Signal payload       | `prompt` string  | `parse_input(prompt, ...)` | Fields the trigger signal was fired with         |
+| Upstream step output | `ctx.input`      | `ctx.input.get("doc-id")`  | `outputTo`/`inputFrom` handoff from a prior step |
 
-If you guessed a key for `ctx.input.get(...)` and got nothing back, you almost
-certainly wanted the signal payload — read `prompt` with `parse_input` instead.
+`ctx.input` does NOT carry the signal payload — a job triggered by a signal
+with no upstream producer has an empty `ctx.input`. If you guessed a key for
+`ctx.input.get(...)` and got nothing back, you almost certainly wanted the
+signal payload — read `prompt` with `parse_input` instead.
 
-### ctx.input — Runtime-provided action input
+### ctx.input — Upstream step output
 
-When the action declares `inputFrom`, prefer `ctx.input` over prompt scraping
-to consume that upstream data. Producers may compact bulky outputs into summary +
-artifact refs; downstream Python agents should dereference those refs through
-host capabilities, not ask the producer to inline large payloads.
+When the action declares `inputFrom`, use `ctx.input` rather than scraping the
+prompt. Producers may compact bulky outputs into summary + artifact refs;
+downstream agents dereference those refs through host capabilities instead of
+asking the producer to inline large payloads.
 
 ```python
-payload = ctx.input.artifact_json("fetched-emails")
-emails = payload.get("emails", [])
+# Compact value (whatever the upstream step put in its outputTo doc)
+payload = ctx.input.get("emails-result")
 
-return ok({"count": len(emails), "firstId": emails[0]["id"] if emails else None})
+# Or, when the doc carries artifact refs, hydrate the JSON contents
+payload = ctx.input.artifact_json("emails-result")
+emails = payload.get("emails", [])
+return ok({"count": len(emails)})
 ```
 
-Useful methods:
+Useful methods (all take an optional `doc-id`; omit it to operate on the full
+raw input):
 
-- `ctx.input.get("doc-id")` — compact input payload for an `inputFrom` document.
-- `ctx.input.require("doc-id")` — same, but raises if missing.
-- `ctx.input.artifact_refs("doc-id")` — artifact refs attached to the input.
-- `ctx.input.artifact_json("doc-id")` — fetches via `get_artifact` and parses JSON contents.
+- `ctx.input.get(name, default=None)` — compact input payload for an `inputFrom` document.
+- `ctx.input.require(name)` — same, but raises `ValueError` if missing.
+- `ctx.input.artifact_refs(name)` — artifact refs attached to the input.
+- `ctx.input.artifact_json(name)` — fetch via `get_artifact` and parse JSON contents.
 
 `prompt` still exists for natural-language task instructions and backwards
 compatibility, but `parse_input(prompt)` is not the right abstraction for
 multi-step `outputTo`/`inputFrom` handoffs.
 
-Friday sends "enriched prompts" — markdown with embedded JSON containing task
-details, signal data, and context. Code agents can still extract structured data
-from these for simple one-shot prompts.
-
-### parse_input — Simple extraction
+### parse_input — Signal-payload extraction
 
 ```python
 from friday_agent_sdk import parse_input
@@ -372,55 +301,16 @@ When in doubt: if the operation touches a network boundary or needs credentials,
 use the host capability. If it's pure data manipulation, standard library or
 installed packages are fine.
 
-## Getting Agents Into Friday
+## Getting Agents Into a Workspace
 
-### Register via the daemon HTTP API
+The SDK's job ends at the file: a registered `@agent` function plus
+`run()` in `__main__`. How that file becomes a usable agent on the host
+is a platform concern (Friday Studio's CLI, an in-tree dev daemon, a
+deployment pipeline) — see your platform's docs for the registration
+command, and do not have the agent code shell out to a daemon to
+register itself.
 
-Register your agent by POSTing the entrypoint's absolute path to the daemon:
-
-```bash
-curl -X POST http://localhost:8080/api/agents/register \
-  -H 'Content-Type: application/json' \
-  -d '{"entrypoint": "/abs/path/to/your-agent/agent.py"}'
-```
-
-`entrypoint` must be an absolute path. The daemon spawns it with
-`FRIDAY_VALIDATE_ID`, collects metadata over NATS, copies the source directory
-into the agents registry (under `{FRIDAY_HOME}/agents/{id}@{version}/` — the
-home dir is mid-migration from `~/.atlas` to `~/.friday/local`), and reloads
-the registry. No compilation step — the agent process is spawned per
-invocation and communicates with the host via NATS request/reply. The daemon sets `FRIDAY_NATS_URL` for registration and execution; agent code should not open its own NATS connection or assume `nats://localhost:4222`.
-
-The register response returns `agent.path` (the install dir). To look up the
-source path of an existing agent, query `GET /api/agents/:id` and read
-`sourceLocation` rather than constructing the path from a constant.
-
-The Friday daemon listens on `localhost:8080` by default (configurable via
-the `FRIDAY_PORT` env var or the `--port` flag if you started the daemon
-manually).
-
-### Test directly
-
-Execute an agent without going through the full FSM pipeline. Replace
-`my-agent` with your agent id (the `id=` value from the `@agent` decorator):
-
-```bash
-curl -s -X POST "http://localhost:8080/api/agents/my-agent/run?workspaceId=user" \
-  -H 'Content-Type: application/json' \
-  -d '{"input": "test prompt"}'
-```
-
-Or via the playground API on `localhost:5200`:
-
-```bash
-curl -s -X POST http://localhost:5200/api/agents/my-agent/run \
-  -H 'Content-Type: application/json' \
-  -d '{"input": "test prompt"}'
-```
-
-### Workspace Configuration
-
-Register your agent in `workspace.yml`:
+Once the platform knows about it, reference it in `workspace.yml`:
 
 ```yaml
 agents:
@@ -428,14 +318,20 @@ agents:
     type: user
 ```
 
-Friday adds the `user:` prefix automatically — you specify `my-agent`,
-Friday resolves it to `user:my-agent`.
+The `id` matches the `id=` value from the `@agent` decorator. The host
+resolves `type: user` to the registered Python agent and routes
+invocations into your `execute` function over NATS.
+
+The agent process is spawned per invocation by the host; it sets
+`FRIDAY_VALIDATE_ID` (registration) or `FRIDAY_SESSION_ID` (execution)
+plus `NATS_URL`, and `run()` handles the rest. Your code should not
+open its own NATS connection.
 
 ## Casing Convention
 
 This is a subtle but real source of bugs:
 
-- **Decorator kwargs**: `snake_case` (Pythonic) — `display_name`, `input_schema`, `use_workspace_skills`
+- **Decorator kwargs**: `snake_case` (Pythonic) — `display_name`, `use_workspace_skills`
 - **Dict values inside decorator**: `camelCase` (matches host Zod schemas) — `linkRef`, `displayName` inside environment dicts
 - **MCP config keys**: `camelCase` in transport config
 - **Result data**: your choice, but `snake_case` is conventional for Python agents
