@@ -4,7 +4,6 @@
 
 - [Environment and Extension Guidance](#environment-and-extension-guidance)
 - [Casing Rules](#casing-rules)
-- [Build Pipeline](#build-pipeline)
 - [Common Mistakes and Fixes](#common-mistakes-and-fixes)
 - [One Agent Per Module](#one-agent-per-module)
 - [Streaming LLM Responses](#streaming-llm-responses)
@@ -77,21 +76,6 @@ The `_bridge.py` module converts decorator metadata to camelCase when serializin
 - `input_schema` → `inputSchema` (after JSON Schema extraction)
 
 You don't need to worry about this conversion — just use snake_case in Python and the bridge handles it.
-
----
-
-## Build Pipeline
-
-`atlas agent register` handles the full pipeline:
-
-```
-agent.py → spawn with FRIDAY_VALIDATE_ID → metadata.json over NATS
-         → copy source dir to ~/.friday/local/agents/{id}@{version}/
-         → write metadata.json sidecar
-         → reload registry
-```
-
-You don't run NATS directly. If registration fails, the error message includes the phase (`prereqs`, `validate`, `write`) and details.
 
 ---
 
