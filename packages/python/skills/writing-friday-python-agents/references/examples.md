@@ -338,7 +338,7 @@ jobs:
         count:
           entry:
             - type: agent
-              agentId: email-counter        # ← the agent below
+              agentId: email-counter # ← the agent below
               inputFrom: emails-result
           type: final
 ```
@@ -392,13 +392,13 @@ Key points:
 
 ## Patterns Summary
 
-| Pattern             | When to use                                   | Key imports                          |
-| ------------------- | --------------------------------------------- | ------------------------------------ |
-| Echo/passthrough    | Testing, simple transforms                    | `ok, run`                            |
-| LLM generation      | Text analysis, classification, summarization  | `ok, err, LlmError, run`             |
-| HTTP integration    | External API calls                            | `ok, err, HttpError, run`            |
-| MCP tools           | Pre-built service integrations                | `ok, err, ToolCallError, run`        |
-| Multi-operation     | Agents handling multiple distinct tasks       | `ok, err, parse_operation, run`      |
-| Upstream-step input | Agent is wired with `inputFrom: <doc-id>`     | `ctx.input.get / artifact_json`      |
-| Structured output   | When you need typed JSON from LLM             | `generate_object` + JSON Schema dict |
-| Streaming progress  | Long-running tasks                            | `ctx.stream.progress()`              |
+| Pattern             | When to use                                  | Key imports                          |
+| ------------------- | -------------------------------------------- | ------------------------------------ |
+| Echo/passthrough    | Testing, simple transforms                   | `ok, run`                            |
+| LLM generation      | Text analysis, classification, summarization | `ok, err, LlmError, run`             |
+| HTTP integration    | External API calls                           | `ok, err, HttpError, run`            |
+| MCP tools           | Pre-built service integrations               | `ok, err, ToolCallError, run`        |
+| Multi-operation     | Agents handling multiple distinct tasks      | `ok, err, parse_operation, run`      |
+| Upstream-step input | Agent is wired with `inputFrom: <doc-id>`    | `ctx.input.get / artifact_json`      |
+| Structured output   | When you need typed JSON from LLM            | `generate_object` + JSON Schema dict |
+| Streaming progress  | Long-running tasks                           | `ctx.stream.progress()`              |
