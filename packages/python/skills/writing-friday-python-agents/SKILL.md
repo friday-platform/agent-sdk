@@ -324,14 +324,14 @@ invocations into your `execute` function over NATS.
 
 The agent process is spawned per invocation by the host; it sets
 `FRIDAY_VALIDATE_ID` (registration) or `FRIDAY_SESSION_ID` (execution)
-plus `FRIDAY_NATS_URL`, and `run()` handles the rest. Your code should
-not open its own NATS connection or assume `nats://localhost:4222`.
+plus `NATS_URL`, and `run()` handles the rest. Your code should not
+open its own NATS connection.
 
 ## Casing Convention
 
 This is a subtle but real source of bugs:
 
-- **Decorator kwargs**: `snake_case` (Pythonic) — `display_name`, `input_schema`, `use_workspace_skills`
+- **Decorator kwargs**: `snake_case` (Pythonic) — `display_name`, `use_workspace_skills`
 - **Dict values inside decorator**: `camelCase` (matches host Zod schemas) — `linkRef`, `displayName` inside environment dicts
 - **MCP config keys**: `camelCase` in transport config
 - **Result data**: your choice, but `snake_case` is conventional for Python agents

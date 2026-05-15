@@ -358,7 +358,7 @@ def execute(prompt: str, ctx: AgentContext):
     payload = ctx.input.get("emails-result")
 
     # When the producer compacted bulky data into an artifact, hydrate it
-    if payload is None or "emails" not in payload:
+    if not isinstance(payload, dict) or "emails" not in payload:
         try:
             payload = ctx.input.artifact_json("emails-result")
         except (ValueError, ToolCallError) as e:

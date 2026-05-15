@@ -51,6 +51,9 @@ from friday_agent_sdk import (
 
     # Exceptions
     LlmError, HttpError, ToolCallError,
+
+    # Version
+    __version__,
 )
 ```
 
@@ -68,8 +71,6 @@ def agent(
     summary: str | None = None,                 # One-line summary
     constraints: str | None = None,             # What the agent cannot do
     examples: list[str] | None = None,          # Example prompts that invoke this agent
-    input_schema: type | None = None,           # Dataclass type — extracted as JSON Schema for docs
-    output_schema: type | None = None,          # Dataclass type — extracted as JSON Schema; echoed back at runtime as ctx.output_schema
     environment: dict[str, Any] | None = None,  # Required/optional env vars
     mcp: dict[str, Any] | None = None,          # MCP server configurations
     llm: dict[str, Any] | None = None,          # Default LLM provider/model
@@ -77,16 +78,10 @@ def agent(
 ) -> Callable
 ```
 
-### output_schema
-
-A dataclass type passed here is converted to a JSON Schema at registration
-time and sent to the host as part of the agent's metadata (`outputSchema`).
-At execution time the host echoes the same schema back as a dict via
-`ctx.output_schema`, so a handler that wants to validate its own return shape
-or hand the schema to an LLM call can read it from there. The SDK does NOT
-enforce the schema on `ok()` — it is informational. Use it when the platform
-needs to know your output shape (e.g. an FSM action with `outputType`), and
-re-validate inside the handler if you need strict checking.
+The decorator also accepts `input_schema: type | None` and `output_schema:
+type | None` for forward compatibility, but neither is currently serialized to
+the host — they are no-ops today. `ctx.output_schema` (below) is host-driven
+and unrelated to these kwargs.
 
 ### use_workspace_skills
 
@@ -152,7 +147,7 @@ class AgentContext:
     config: dict                        # Agent-specific config from workspace (always present)
     skills: list[SkillDefinition]       # Workspace skills when use_workspace_skills=True, else []
     session: SessionData | None         # Session metadata
-    output_schema: dict | None          # JSON Schema from output_schema decorator param
+    output_schema: dict | None          # JSON Schema sent by the host on execute (e.g., from an FSM action's outputType); None when the host sends nothing
     input: AgentInput                   # Structured action input (always initialized)
     tools: Tools                        # MCP tool capability (always initialized)
     llm: Llm                            # LLM generation capability (always initialized)
@@ -274,6 +269,10 @@ Raises `ToolCallError` on failure.
 Structured runtime input. `ctx.input` is the typed counterpart to the
 `prompt` string: it exposes the compact `inputFrom`/config payload without
 asking agents to scrape JSON out of markdown.
+
+`raw` is populated from the host's execute payload (the `context.input`
+section of the NATS execute message). When the host sends nothing structured,
+`raw` is `{}` and every accessor returns the same empty-state shape.
 
 ```python
 class AgentInput:

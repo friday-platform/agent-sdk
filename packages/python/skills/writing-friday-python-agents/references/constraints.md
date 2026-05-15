@@ -52,12 +52,12 @@ The SDK spans a Python/JavaScript boundary. Casing conventions differ on each si
 
 ### Your code (Python side)
 
-| Context          | Convention   | Example                                                |
-| ---------------- | ------------ | ------------------------------------------------------ |
-| Decorator kwargs | `snake_case` | `display_name`, `input_schema`, `use_workspace_skills` |
-| Dataclass fields | `snake_case` | `issue_key`, `max_results`                             |
-| Function names   | `snake_case` | `_handle_view`, `_build_auth`                          |
-| Variable names   | `snake_case` | `api_key`, `response_data`                             |
+| Context          | Convention   | Example                                |
+| ---------------- | ------------ | -------------------------------------- |
+| Decorator kwargs | `snake_case` | `display_name`, `use_workspace_skills` |
+| Dataclass fields | `snake_case` | `issue_key`, `max_results`             |
+| Function names   | `snake_case` | `_handle_view`, `_build_auth`          |
+| Variable names   | `snake_case` | `api_key`, `response_data`             |
 
 ### Dict values passed to host
 
@@ -73,7 +73,6 @@ The `_bridge.py` module converts decorator metadata to camelCase when serializin
 
 - `display_name` → `displayName`
 - `use_workspace_skills` → `useWorkspaceSkills`
-- `input_schema` → `inputSchema` (after JSON Schema extraction)
 
 You don't need to worry about this conversion — just use snake_case in Python and the bridge handles it.
 
