@@ -56,16 +56,16 @@ Three things are non-negotiable:
 All capabilities live on `AgentContext` and are always initialized. They may be
 stubs in test contexts, but never `None`.
 
-| Capability  | Access        | What it does                                              |
-| ----------- | ------------- | --------------------------------------------------------- |
-| LLM         | `ctx.llm`     | Generate text or structured objects via host LLM registry |
-| HTTP        | `ctx.http`    | Make outbound HTTP requests (TLS handled by host)         |
-| MCP Tools   | `ctx.tools`   | Call MCP server tools (GitHub, Jira, databases, etc.)     |
-| Input       | `ctx.input`   | Read structured action input / `inputFrom` artifact refs  |
-| Streaming   | `ctx.stream`  | Emit progress/intent events to the UI                     |
-| Environment | `ctx.env`     | Read environment variables (API keys, config)             |
-| Config      | `ctx.config`  | Agent-specific configuration from workspace               |
-| Session     | `ctx.session` | Session metadata (id, workspace_id, user_id, datetime)    |
+| Capability  | Access        | What it does                                                                      |
+| ----------- | ------------- | --------------------------------------------------------------------------------- |
+| LLM         | `ctx.llm`     | Generate text or structured objects via host LLM registry                         |
+| HTTP        | `ctx.http`    | Make outbound HTTP requests (TLS handled by host)                                 |
+| MCP Tools   | `ctx.tools`   | Call MCP server tools (GitHub, Jira, databases, etc.)                             |
+| Input       | `ctx.input`   | Read `inputFrom` upstream-step docs (NOT the signal payload — that's in `prompt`) |
+| Streaming   | `ctx.stream`  | Emit progress/intent events to the UI                                             |
+| Environment | `ctx.env`     | Read environment variables (API keys, config)                                     |
+| Config      | `ctx.config`  | Agent-specific configuration from workspace                                       |
+| Session     | `ctx.session` | Session metadata (id, workspace_id, user_id, datetime)                            |
 
 ### ctx.llm — LLM Generation
 
@@ -229,10 +229,25 @@ Emit progress _before_ expensive operations so the UI shows what's happening.
 
 ## Structured Input Handling
 
+A `type: user` agent receives input through one of two channels. Pick by how
+the job is wired, not by preference:
+
+- **Signal payload** — the fields the job's trigger signal was fired with,
+  plus any `{{inputs.<field>}}` the FSM action interpolated. These arrive in
+  the **`prompt`** string. Parse them with `parse_input(prompt)`. `ctx.input`
+  does NOT carry the signal payload — a job triggered by a signal with no
+  upstream producer has an empty `ctx.input`.
+- **Upstream step output** — a prior FSM step's `outputTo` document, wired
+  into this action via `inputFrom`. These arrive in **`ctx.input`**, keyed by
+  the producing document's id. Use `ctx.input.get("doc-id")`.
+
+If you guessed a key for `ctx.input.get(...)` and got nothing back, you almost
+certainly wanted the signal payload — read `prompt` with `parse_input` instead.
+
 ### ctx.input — Runtime-provided action input
 
-For workspace jobs, prefer `ctx.input` over prompt scraping when consuming
-upstream `inputFrom` data. Producers may compact bulky outputs into summary +
+When the action declares `inputFrom`, prefer `ctx.input` over prompt scraping
+to consume that upstream data. Producers may compact bulky outputs into summary +
 artifact refs; downstream Python agents should dereference those refs through
 host capabilities, not ask the producer to inline large payloads.
 
