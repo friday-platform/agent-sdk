@@ -1,19 +1,19 @@
 packages:
   - packages/*
 
-catalogMode: prefer
-
 catalog:
   "@types/node": ^25
   typescript: ^6
   vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite-plus: ^0.1.24
   vitest: npm:@voidzero-dev/vite-plus-test@latest
-  vite-plus: latest
+
+catalogMode: prefer
 overrides:
+  "@voidzero-dev/vite-plus-test>vite": "^8.0.16"
+  postcss: "^8.5.10"
   vite: "catalog:"
   vitest: "catalog:"
-  postcss: "^8.5.10"
-  "@voidzero-dev/vite-plus-test>vite": "^8.0.5"
 peerDependencyRules:
   allowAny:
     - vite
